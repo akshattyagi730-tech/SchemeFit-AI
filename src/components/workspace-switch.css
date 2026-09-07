@@ -1,0 +1,3 @@
+.workspace-switch { margin-left: 2px; padding: 7px 9px; border: 1px solid #cce5dc; border-radius: 6px; color: #087255; background: #effbf6; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.workspace-switch:hover { background: #dff7ed; }
+@media (max-width: 1150px) { .workspace-switch { display: none; } }

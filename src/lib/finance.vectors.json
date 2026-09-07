@@ -1,0 +1,187 @@
+[
+  {
+    "name": "plain_amortising_540000_at_7pct_60m",
+    "input": {
+      "projectCostPaise": 60000000,
+      "ownContributionPaise": 6000000,
+      "requestedLoanPaise": 54000000,
+      "annualRateBps": 700,
+      "tenureMonths": 60,
+      "moratoriumMonths": 0,
+      "moratoriumInterestHandling": "serviced",
+      "tenureIncludesMoratorium": false,
+      "scheme": {
+        "maxAmountPaise": 300000000,
+        "maxProjectCostSharePct": 90,
+        "minOwnContributionPct": 5,
+        "minInterestRateBps": 0,
+        "maxInterestRateBps": 2000,
+        "minTenureMonths": 6,
+        "maxTenureMonths": 120,
+        "moratoriumAllowed": true,
+        "moratoriumMaxMonths": 12
+      }
+    },
+    "expected": {
+      "principalPaise": 54000000,
+      "repaymentMonths": 60,
+      "monthlyInstalmentPaise": 1069265,
+      "finalInstalmentPaise": 1069247,
+      "totalInterestPaise": 10155882,
+      "totalRepaymentPaise": 64155882,
+      "moratoriumInterestPaise": 0,
+      "schemeFinancingCapPaise": 54000000,
+      "financingGapPaise": 0,
+      "scheduleLength": 60,
+      "lastClosingBalancePaise": 0
+    }
+  },
+  {
+    "name": "zero_interest_120000_over_24m",
+    "input": {
+      "projectCostPaise": 15000000,
+      "ownContributionPaise": 3000000,
+      "requestedLoanPaise": 12000000,
+      "annualRateBps": 0,
+      "tenureMonths": 24,
+      "moratoriumMonths": 0,
+      "moratoriumInterestHandling": "serviced",
+      "tenureIncludesMoratorium": false,
+      "scheme": {
+        "maxAmountPaise": 300000000,
+        "maxProjectCostSharePct": 90,
+        "minOwnContributionPct": 5,
+        "minInterestRateBps": 0,
+        "maxInterestRateBps": 2000,
+        "minTenureMonths": 6,
+        "maxTenureMonths": 120,
+        "moratoriumAllowed": true,
+        "moratoriumMaxMonths": 12
+      }
+    },
+    "expected": {
+      "principalPaise": 12000000,
+      "repaymentMonths": 24,
+      "monthlyInstalmentPaise": 500000,
+      "finalInstalmentPaise": 500000,
+      "totalInterestPaise": 0,
+      "totalRepaymentPaise": 12000000,
+      "moratoriumInterestPaise": 0,
+      "schemeFinancingCapPaise": 13500000,
+      "financingGapPaise": 0,
+      "scheduleLength": 24,
+      "lastClosingBalancePaise": 0
+    }
+  },
+  {
+    "name": "moratorium_serviced_additional_tenure",
+    "input": {
+      "projectCostPaise": 100000000,
+      "ownContributionPaise": 10000000,
+      "requestedLoanPaise": 90000000,
+      "annualRateBps": 800,
+      "tenureMonths": 36,
+      "moratoriumMonths": 6,
+      "moratoriumInterestHandling": "serviced",
+      "tenureIncludesMoratorium": false,
+      "scheme": {
+        "maxAmountPaise": 300000000,
+        "maxProjectCostSharePct": 90,
+        "minOwnContributionPct": 5,
+        "minInterestRateBps": 0,
+        "maxInterestRateBps": 2000,
+        "minTenureMonths": 6,
+        "maxTenureMonths": 120,
+        "moratoriumAllowed": true,
+        "moratoriumMaxMonths": 12
+      }
+    },
+    "expected": {
+      "principalPaise": 90000000,
+      "repaymentMonths": 36,
+      "monthlyInstalmentPaise": 2820273,
+      "finalInstalmentPaise": 2820271,
+      "totalInterestPaise": 15129826,
+      "totalRepaymentPaise": 105129826,
+      "moratoriumInterestPaise": 3600000,
+      "schemeFinancingCapPaise": 90000000,
+      "financingGapPaise": 0,
+      "scheduleLength": 36,
+      "lastClosingBalancePaise": 0
+    }
+  },
+  {
+    "name": "moratorium_capitalised_tenure_includes",
+    "input": {
+      "projectCostPaise": 50000000,
+      "ownContributionPaise": 0,
+      "requestedLoanPaise": 50000000,
+      "annualRateBps": 1000,
+      "tenureMonths": 48,
+      "moratoriumMonths": 12,
+      "moratoriumInterestHandling": "capitalised",
+      "tenureIncludesMoratorium": true,
+      "scheme": {
+        "maxAmountPaise": 300000000,
+        "maxProjectCostSharePct": 90,
+        "minOwnContributionPct": 5,
+        "minInterestRateBps": 0,
+        "maxInterestRateBps": 2000,
+        "minTenureMonths": 6,
+        "maxTenureMonths": 120,
+        "moratoriumAllowed": true,
+        "moratoriumMaxMonths": 12
+      }
+    },
+    "expected": {
+      "principalPaise": 55235653,
+      "repaymentMonths": 36,
+      "monthlyInstalmentPaise": 1782299,
+      "finalInstalmentPaise": 1782303,
+      "totalInterestPaise": 14162768,
+      "totalRepaymentPaise": 64162768,
+      "moratoriumInterestPaise": 5235653,
+      "schemeFinancingCapPaise": 45000000,
+      "financingGapPaise": 0,
+      "scheduleLength": 36,
+      "lastClosingBalancePaise": 0
+    }
+  },
+  {
+    "name": "odd_amount_rate_rounding",
+    "input": {
+      "projectCostPaise": 33333300,
+      "ownContributionPaise": 3333300,
+      "requestedLoanPaise": 30000000,
+      "annualRateBps": 1150,
+      "tenureMonths": 17,
+      "moratoriumMonths": 0,
+      "moratoriumInterestHandling": "serviced",
+      "tenureIncludesMoratorium": false,
+      "scheme": {
+        "maxAmountPaise": 300000000,
+        "maxProjectCostSharePct": 90,
+        "minOwnContributionPct": 5,
+        "minInterestRateBps": 0,
+        "maxInterestRateBps": 2000,
+        "minTenureMonths": 6,
+        "maxTenureMonths": 120,
+        "moratoriumAllowed": true,
+        "moratoriumMaxMonths": 12
+      }
+    },
+    "expected": {
+      "principalPaise": 30000000,
+      "repaymentMonths": 17,
+      "monthlyInstalmentPaise": 1920781,
+      "finalInstalmentPaise": 1920784,
+      "totalInterestPaise": 2653280,
+      "totalRepaymentPaise": 32653280,
+      "moratoriumInterestPaise": 0,
+      "schemeFinancingCapPaise": 29999970,
+      "financingGapPaise": 0,
+      "scheduleLength": 17,
+      "lastClosingBalancePaise": 0
+    }
+  }
+]

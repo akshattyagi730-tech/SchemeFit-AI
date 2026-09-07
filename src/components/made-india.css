@@ -1,0 +1,10 @@
+.made-india {
+  width: 154px;
+  margin-right: 4px;
+  padding-right: 12px;
+  border-right: 1px solid #dbe6ec;
+}
+
+.made-india img { display: block; width: 100%; height: auto; mix-blend-mode: multiply; }
+
+@media (max-width: 850px) { .made-india { display: none; } }

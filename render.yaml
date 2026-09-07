@@ -1,0 +1,67 @@
+# Render Blueprint — SchemeFit AI API (Express + TypeScript + MongoDB)
+#
+# This provisions the BACKEND only. The database is MongoDB Atlas (external) and
+# the frontend is deployed separately (Vercel — see vercel.json — or a Render
+# Static Site; both covered in DEPLOYMENT.md).
+#
+# First deploy:
+#   1. Push this repo to GitHub.
+#   2. Render → New → Blueprint → pick the repo. It reads this file.
+#   3. Fill the prompted env vars (MONGO_URL, CLIENT_ORIGIN, SEED_ADMIN_*).
+#   4. After the web app is live, set CLIENT_ORIGIN to its real URL and redeploy.
+#
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: schemefit-api
+    runtime: node
+    plan: free # free web services sleep after ~15 min idle and cold-start in ~1 min
+    region: singapore # closest Render region to India; also: oregon, frankfurt
+    rootDir: server
+    # NODE_ENV=production makes npm skip devDependencies; --include=dev restores
+    # TypeScript for the build step. Runtime uses the compiled dist/ only.
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/v1/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true # Render generates a strong value once and keeps it
+      - key: COOKIE_SAMESITE
+        value: none # web app and API are on different sites → cross-site cookies
+      # ---- set these in the Render dashboard / blueprint prompts ----
+      - key: MONGO_URL
+        sync: false # e.g. mongodb+srv://user:pass@cluster0.xxxx.mongodb.net/schemefit?retryWrites=true&w=majority
+      - key: CLIENT_ORIGIN
+        sync: false # exact web origin(s), comma-separated. e.g. https://schemefit.vercel.app
+      - key: SEED_ADMIN_EMAIL
+        sync: false
+      - key: SEED_ADMIN_PASSWORD
+        sync: false
+      # ---- one-shot demo data (no shell needed on Render free) ----
+      - key: SEED_ON_BOOT
+        value: "true" # seeds ONLY when the users collection is empty; safe to leave on
+      - key: SEED_ALLOW_PROD
+        value: "true" # required because NODE_ENV=production
+      # ---- file storage ----
+      # Free tier: local disk is EPHEMERAL — uploaded documents are lost when the
+      # instance recycles (roughly daily). Fine for a live-driven demo.
+      # For durable storage either (a) upgrade to a paid instance + uncomment the
+      # `disk:` block below and set STORAGE_LOCAL_DIR=/var/data/uploads, or
+      # (b) set STORAGE_DRIVER=s3 with an S3 / Cloudflare R2 bucket (see .env.example).
+      - key: STORAGE_DRIVER
+        value: local
+      - key: STORAGE_LOCAL_DIR
+        value: ./var/uploads
+      - key: UPLOAD_MAX_BYTES
+        value: "10485760"
+      - key: SESSION_TTL_HOURS
+        value: "168"
+    # ---- durable uploads on a PAID instance: uncomment and set plan: starter ----
+    # disk:
+    #   name: schemefit-uploads
+    #   mountPath: /var/data
+    #   sizeGB: 1
