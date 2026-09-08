@@ -320,6 +320,17 @@ export interface SeedResult {
   citizens: { email: string; password: string }[];
 }
 
+/**
+ * Upsert ONLY reference data (schemes + partner organisations). Idempotent and
+ * safe on every boot — used to keep the catalogue current on a deployment that
+ * already has users, without touching accounts or transactional data.
+ */
+export async function syncReferenceData(): Promise<{ schemes: number; partners: number }> {
+  await upsertSchemes();
+  await upsertPartners();
+  return { schemes: schemes.length, partners: partners.length };
+}
+
 export async function seedDatabase({ fresh }: { fresh: boolean }): Promise<SeedResult> {
   if (env.isProd && !env.SEED_ALLOW_PROD) {
     throw new Error('Refusing to seed a production database. Set SEED_ALLOW_PROD=true to override.');

@@ -7,6 +7,8 @@ export const PARTNER_TYPES = [
   'regional_rural_bank',
   'nbfc',
   'cooperative_bank',
+  'development_finance_institution',
+  'urban_local_body',
 ] as const;
 export type PartnerType = (typeof PARTNER_TYPES)[number];
 

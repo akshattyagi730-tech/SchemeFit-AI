@@ -4,13 +4,16 @@ import { env } from './config/env';
 import { logger } from './lib/logger';
 import { ensureIndexes } from './lib/indexes';
 import { User } from './models';
-import { seedDatabase } from './seed/run';
+import { seedDatabase, syncReferenceData } from './seed/run';
 
 async function maybeSeedOnBoot() {
   if (!env.SEED_ON_BOOT) return;
   const users = await User.estimatedDocumentCount();
   if (users > 0) {
-    logger.info('SEED_ON_BOOT: users already present, skipping seed');
+    // Accounts/transactions already exist — just keep the scheme + partner
+    // catalogue up to date with the latest fixtures.
+    const ref = await syncReferenceData();
+    logger.info(ref, 'SEED_ON_BOOT: users present — synced reference data only');
     return;
   }
   logger.warn('SEED_ON_BOOT: empty database — running idempotent seed');
