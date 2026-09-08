@@ -3,7 +3,7 @@ import { PageTitle, Button, Loading, ErrorState } from '../components/ui';
 import { useProfile, useUpdateProfile } from '../api/hooks';
 import { useToast } from '../app/toast';
 import { ApiError } from '../api/client';
-import { paiseToRupees, rupeesToPaise } from '../lib/format';
+import { paiseToRupees, rupeesToPaise, placeError } from '../lib/format';
 import type { AreaType, Purpose, SocialCategory } from '../api/types';
 
 const CATEGORIES: SocialCategory[] = ['GENERAL', 'OBC', 'SC', 'ST', 'EWS', 'MINORITY'];
@@ -85,6 +85,10 @@ export function Profile() {
       if (!/^\d+$/.test(f.age.trim())) e.age = 'Age must be a whole number (digits only)';
       else if (Number(f.age) < 16 || Number(f.age) > 100) e.age = 'Age must be between 16 and 100';
     }
+    for (const k of ['state', 'district'] as const) {
+      const pe = placeError(f[k]);
+      if (pe) e[k] = pe;
+    }
     const money: [keyof FormState, string][] = [
       ['annualIncome', 'annualIncomePaise'],
       ['projectCost', 'projectCostPaise'],
@@ -163,12 +167,12 @@ export function Profile() {
           </label>
           <label>
             Age
-            <input type="number" inputMode="numeric" min={0} value={form.age} onChange={(e) => set('age', e.target.value.replace(/[^0-9]/g, ''))} />
+            <input type="number" inputMode="numeric" min={16} max={100} value={form.age} onChange={(e) => set('age', e.target.value.replace(/[^0-9]/g, ''))} />
             {err('age')}
           </label>
           <label>
             Annual household income (₹)
-            <input type="number" inputMode="numeric" min={0} value={form.annualIncome} onChange={(e) => set('annualIncome', e.target.value.replace(/[^0-9]/g, ''))} />
+            <input type="number" inputMode="numeric" min={0} max={MAX_RUPEES} value={form.annualIncome} onChange={(e) => set('annualIncome', e.target.value.replace(/[^0-9]/g, ''))} />
             {err('annualIncomePaise')}
           </label>
           <label>
@@ -184,11 +188,13 @@ export function Profile() {
           </label>
           <label>
             State
-            <input value={form.state} onChange={(e) => set('state', e.target.value)} />
+            <input value={form.state} onChange={(e) => set('state', e.target.value)} maxLength={60} />
+            {err('state')}
           </label>
           <label>
             District
-            <input value={form.district} onChange={(e) => set('district', e.target.value)} />
+            <input value={form.district} onChange={(e) => set('district', e.target.value)} maxLength={60} />
+            {err('district')}
           </label>
           <label>
             Area type
@@ -230,17 +236,17 @@ export function Profile() {
           </label>
           <label>
             Project cost (₹)
-            <input type="number" inputMode="numeric" min={0} value={form.projectCost} onChange={(e) => set('projectCost', e.target.value.replace(/[^0-9]/g, ''))} />
+            <input type="number" inputMode="numeric" min={0} max={MAX_RUPEES} value={form.projectCost} onChange={(e) => set('projectCost', e.target.value.replace(/[^0-9]/g, ''))} />
             {err('projectCostPaise')}
           </label>
           <label>
             Own contribution (₹)
-            <input type="number" inputMode="numeric" min={0} value={form.ownContribution} onChange={(e) => set('ownContribution', e.target.value.replace(/[^0-9]/g, ''))} />
+            <input type="number" inputMode="numeric" min={0} max={MAX_RUPEES} value={form.ownContribution} onChange={(e) => set('ownContribution', e.target.value.replace(/[^0-9]/g, ''))} />
             {err('ownContributionPaise')}
           </label>
           <label>
             Requested loan (₹)
-            <input type="number" inputMode="numeric" min={0} value={form.requestedLoan} onChange={(e) => set('requestedLoan', e.target.value.replace(/[^0-9]/g, ''))} />
+            <input type="number" inputMode="numeric" min={0} max={MAX_RUPEES} value={form.requestedLoan} onChange={(e) => set('requestedLoan', e.target.value.replace(/[^0-9]/g, ''))} />
             {err('requestedLoanPaise')}
           </label>
         </div>

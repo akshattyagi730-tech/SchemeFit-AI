@@ -7,7 +7,7 @@ import { DocumentChecklist } from '../components/DocumentChecklist';
 import { useProfile, useUpdateProfile } from '../api/hooks';
 import { useToast } from '../app/toast';
 import { ApiError } from '../api/client';
-import { paiseToRupees, rupeesToPaise, PURPOSE_GROUPS, PURPOSE_LABELS, CATEGORY_LABELS, AREA_LABELS } from '../lib/format';
+import { paiseToRupees, rupeesToPaise, placeError, PURPOSE_GROUPS, PURPOSE_LABELS, CATEGORY_LABELS, AREA_LABELS } from '../lib/format';
 
 const GROUP_ICON: Record<string, typeof Briefcase> = {
   'Business & self-employment': Briefcase,
@@ -124,7 +124,9 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
       else if (age < 16 || age > 100) e.age = 'Age must be between 16 and 100';
       if (!form.category) e.category = 'Select your social category';
       if (!form.state.trim()) e.state = 'Enter your state';
+      else { const pe = placeError(form.state); if (pe) e.state = pe; }
       if (!form.district.trim()) e.district = 'Enter your district';
+      else { const pe = placeError(form.district); if (pe) e.district = pe; }
       if (!form.areaType) e.areaType = 'Select an area type';
     }
     if (s === 2) {

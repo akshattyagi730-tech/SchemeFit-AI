@@ -42,6 +42,20 @@ export const CATEGORY_LABELS: Record<string, string> = {
 
 export const AREA_LABELS: Record<string, string> = { rural: 'Rural', urban: 'Urban', semi_urban: 'Semi-urban' };
 
+/**
+ * Validate a free-text place name (state / district). Returns an error message
+ * or null. Empty is allowed here — "required" is enforced separately.
+ * Allows letters (any script), digits, spaces and . , ' ( ) & / -.
+ */
+export function placeError(value: string): string | null {
+  const t = value.trim();
+  if (!t) return null;
+  if (t.length > 60) return 'Name is too long';
+  if (!/\p{L}/u.test(t)) return 'Enter a valid name (must contain letters)';
+  if (!/^[\p{L}\p{M}\d .,'()&/-]+$/u.test(t)) return "Use letters, spaces and . , ' - only — no other symbols";
+  return null;
+}
+
 export const STATUS_LABELS: Record<string, string> = {
   DRAFT: 'Draft',
   SUBMITTED: 'Submitted',
