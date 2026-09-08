@@ -24,13 +24,18 @@ async function maybeSeedOnBoot() {
 async function main() {
   await connectDb();
   await ensureIndexes();
-  await maybeSeedOnBoot();
 
   const app = createApp();
-  const server = app.listen(env.PORT, () => {
+  const server = app.listen(env.PORT, '0.0.0.0', () => {
     logger.info(`SchemeFit AI API listening on :${env.PORT}/api/v1  (env: ${env.NODE_ENV})`);
     logger.info(`API docs: /api/v1/docs`);
   });
+
+  // Run the optional boot seed AFTER the server is accepting connections, so a
+  // slow or failing seed can never block the platform health check.
+  void maybeSeedOnBoot().catch((err) =>
+    logger.error({ err }, 'SEED_ON_BOOT failed — service continues without demo data'),
+  );
 
   const shutdown = async (signal: string) => {
     logger.info({ signal }, 'shutting down');
