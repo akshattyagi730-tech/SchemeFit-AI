@@ -171,3 +171,21 @@
 .checklist-schemes .pill.req { background: #f5fffc; border: 1px solid #c6ecdf; color: #176459; }
 .checklist-schemes .pill.opt { background: #f4f6f8; border: 1px solid #e0e6ec; color: #6a7f9c; }
 .checklist-row .auth-switch { display: inline-flex; align-items: center; gap: 3px; }
+
+/* ---- Bug-fix: prevent long/garbage values forcing horizontal page scroll ---- */
+.sidebar + main { overflow-x: hidden; }
+.form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.form-grid label { min-width: 0; }
+.form-grid input, .form-grid select { min-width: 0; max-width: 100%; }
+.review-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.review-grid > div { min-width: 0; }
+.review-grid b { overflow-wrap: anywhere; }
+.wizard-card { max-width: 100%; overflow: hidden; }
+.opt-tag { font-size: 9px; font-weight: 700; color: #8093b6; background: #eef2f5; padding: 1px 5px; border-radius: 4px; margin-left: 5px; }
+/* number inputs: hide spinners for a cleaner look, keep native validation */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
+@media (max-width: 700px) {
+  .review-grid { grid-template-columns: 1fr 1fr; }
+}

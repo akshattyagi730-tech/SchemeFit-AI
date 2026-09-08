@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Sparkles, ArrowRight, ArrowLeft, Check, Briefcase, GraduationCap, Sprout, Home, Bike, Wallet, IndianRupee,
+  Sparkles, ArrowRight, ArrowLeft, Check, Briefcase, GraduationCap, Sprout, Home, Bike, Wallet, IndianRupee, AlertTriangle,
 } from 'lucide-react';
 import { PageTitle, Button, Loading, ErrorState } from '../components/ui';
 import { DocumentChecklist } from '../components/DocumentChecklist';
@@ -20,6 +20,7 @@ const GROUP_ICON: Record<string, typeof Briefcase> = {
 
 const CATEGORIES = ['GENERAL', 'OBC', 'SC', 'ST', 'EWS', 'MINORITY'];
 const AREAS = ['rural', 'urban', 'semi_urban'];
+const MAX_RUPEES = 100_000_000; // ₹10 crore — matches the server cap (₹10 cr in paise)
 
 type Form = {
   purpose: string;
@@ -48,6 +49,22 @@ const EMPTY: Form = {
 const rupeeStr = (paise: number | null | undefined) => (paise == null ? '' : String(paiseToRupees(paise)));
 const isBusiness = (p: string) => p.startsWith('business') || p === 'equipment_purchase' || p === 'working_capital';
 const isStudy = (p: string) => p === 'education' || p === 'skilling';
+const inr = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
+
+/** Which wizard step owns each field (form key AND server path). */
+const FIELD_STEP: Record<string, number> = {
+  fullName: 1, age: 1, category: 1, state: 1, district: 1, areaType: 1,
+  annualIncome: 2, annualIncomePaise: 2, businessActivity: 2, educationCourse: 2,
+  projectCost: 3, projectCostPaise: 3, ownContribution: 3, ownContributionPaise: 3,
+  requestedLoan: 3, requestedLoanPaise: 3,
+};
+const SERVER_TO_FORM: Record<string, string> = {
+  annualIncomePaise: 'annualIncome', projectCostPaise: 'projectCost',
+  ownContributionPaise: 'ownContribution', requestedLoanPaise: 'requestedLoan',
+};
+
+const isPosNumber = (raw: string) => raw.trim() !== '' && Number.isFinite(Number(raw)) && Number(raw) > 0;
+const isNonNegNumber = (raw: string) => raw.trim() !== '' && Number.isFinite(Number(raw)) && Number(raw) >= 0;
 
 export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
   const { data, isLoading, isError, error, refetch } = useProfile();
@@ -55,7 +72,7 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
   const { toast, errorToast } = useToast();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<Form>(EMPTY);
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [errs, setErrs] = useState<Record<string, string>>({});
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -80,34 +97,87 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
     });
   }, [data]);
 
-  const set = (k: keyof Form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const set = (k: keyof Form, v: string) => {
+    setForm((f) => ({ ...f, [k]: v }));
+    setErrs((e) => (e[k] ? { ...e, [k]: '' } : e)); // clear this field's error as the user types
+  };
 
-  const steps = useMemo(() => {
-    const base = ['Purpose', 'About you', 'Your situation', 'The money', 'Review'];
-    return base;
-  }, []);
+  const steps = ['Purpose', 'About you', 'Your situation', 'The money', 'Review'];
 
   const gap = useMemo(() => {
-    const pc = Number(form.projectCost || 0);
+    if (!isPosNumber(form.projectCost)) return null;
+    const pc = Number(form.projectCost);
     const oc = Number(form.ownContribution || 0);
     const rl = Number(form.requestedLoan || 0);
-    if (!pc) return null;
     return pc - oc - rl;
   }, [form.projectCost, form.ownContribution, form.requestedLoan]);
 
-  if (isLoading) return <Loading label="Loading…" />;
-  if (isError) return <ErrorState error={error} onRetry={refetch} />;
+  /** Validate one step. Returns a field→message map (empty = valid). */
+  function validateStep(s: number): Record<string, string> {
+    const e: Record<string, string> = {};
+    if (s === 0 && !form.purpose) e.purpose = 'Choose what you need the loan for';
+    if (s === 1) {
+      if (form.fullName.trim().length < 2) e.fullName = 'Enter your full name';
+      const age = Number(form.age);
+      if (form.age.trim() === '') e.age = 'Enter your age';
+      else if (!/^\d+$/.test(form.age.trim()) || !Number.isInteger(age)) e.age = 'Age must be a whole number';
+      else if (age < 16 || age > 100) e.age = 'Age must be between 16 and 100';
+      if (!form.category) e.category = 'Select your social category';
+      if (!form.state.trim()) e.state = 'Enter your state';
+      if (!form.district.trim()) e.district = 'Enter your district';
+      if (!form.areaType) e.areaType = 'Select an area type';
+    }
+    if (s === 2) {
+      if (form.annualIncome.trim() === '') e.annualIncome = 'Enter your annual household income';
+      else if (!isNonNegNumber(form.annualIncome)) e.annualIncome = 'Enter a valid amount in rupees (digits only)';
+      else if (Number(form.annualIncome) > MAX_RUPEES) e.annualIncome = `Enter rupees, not paise — maximum ${inr(MAX_RUPEES)}`;
+      if (isBusiness(form.purpose) && !form.businessActivity.trim()) e.businessActivity = 'Briefly describe the business or activity';
+      if (form.purpose === 'agriculture' && !form.businessActivity.trim()) e.businessActivity = 'Which activity? (e.g. dairy, crop cultivation)';
+      if (isStudy(form.purpose) && !form.educationCourse.trim()) e.educationCourse = 'Enter the course or programme';
+    }
+    if (s === 3) {
+      if (!isPosNumber(form.projectCost)) e.projectCost = 'Enter the total project cost in rupees';
+      else if (Number(form.projectCost) > MAX_RUPEES) e.projectCost = `Maximum ${inr(MAX_RUPEES)}`;
+      if (form.ownContribution.trim() !== '' && !isNonNegNumber(form.ownContribution)) e.ownContribution = 'Enter a valid amount (digits only)';
+      else if (isNonNegNumber(form.ownContribution) && Number(form.ownContribution) > MAX_RUPEES) e.ownContribution = `Maximum ${inr(MAX_RUPEES)}`;
+      if (!isPosNumber(form.requestedLoan)) e.requestedLoan = 'Enter the loan amount you need in rupees';
+      else if (Number(form.requestedLoan) > MAX_RUPEES) e.requestedLoan = `Maximum ${inr(MAX_RUPEES)}`;
+      if (!e.projectCost && !e.requestedLoan) {
+        const pc = Number(form.projectCost);
+        const oc = Number(form.ownContribution || 0);
+        const rl = Number(form.requestedLoan);
+        if (oc > pc) e.ownContribution = `Own contribution cannot exceed the project cost (${inr(pc)})`;
+        else if (oc + rl > pc) e.requestedLoan = `Own contribution + loan (${inr(oc + rl)}) is more than the project cost (${inr(pc)})`;
+      }
+    }
+    return e;
+  }
 
-  const canNext = (() => {
-    if (step === 0) return !!form.purpose;
-    if (step === 1) return form.fullName.trim().length > 1 && !!form.age && !!form.category && !!form.state.trim() && !!form.district.trim() && !!form.areaType;
-    if (step === 2) return !!form.annualIncome;
-    if (step === 3) return !!form.projectCost && !!form.requestedLoan;
-    return true;
-  })();
+  function next() {
+    const e = validateStep(step);
+    if (Object.keys(e).length) {
+      setErrs(e);
+      return;
+    }
+    setErrs({});
+    setStep((s) => Math.min(4, s + 1));
+  }
+
+  function goToFirstError(e: Record<string, string>) {
+    const firstStep = Math.min(...Object.keys(e).map((k) => FIELD_STEP[k] ?? 4));
+    setErrs(e);
+    setStep(firstStep);
+  }
 
   async function submit() {
-    setFieldErrors({});
+    // Re-validate every earlier step so the Review page can never submit garbage.
+    const all = { ...validateStep(1), ...validateStep(2), ...validateStep(3) };
+    if (Object.keys(all).length) {
+      goToFirstError(all);
+      errorToast('Some answers need fixing — we’ve taken you back to the first one.');
+      return;
+    }
+    setErrs({});
     const num = (s: string) => (s.trim() === '' ? null : Number(s));
     const patch: Record<string, unknown> = {
       fullName: form.fullName.trim(),
@@ -131,15 +201,21 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
       toast('Saved. Your matches and document checklist are ready.');
     } catch (err) {
       if (err instanceof ApiError && err.fieldErrors.length) {
-        setFieldErrors(Object.fromEntries(err.fieldErrors.map((f) => [f.path, f.message])));
-        errorToast('Please correct the highlighted fields.');
+        // Map server field paths back to wizard fields + jump to the right step.
+        const mapped: Record<string, string> = {};
+        for (const f of err.fieldErrors) mapped[SERVER_TO_FORM[f.path] ?? f.path] = f.message;
+        goToFirstError(mapped);
+        errorToast('The server rejected an answer — we’ve taken you to it.');
       } else {
-        errorToast(err instanceof ApiError ? err.message : 'Could not save.');
+        errorToast(err instanceof ApiError ? err.message : 'Could not save right now. Your session is fine — please try again.');
       }
     }
   }
 
-  const errFor = (k: string) => fieldErrors[k] && <span className="field-error">{fieldErrors[k]}</span>;
+  if (isLoading) return <Loading label="Loading…" />;
+  if (isError) return <ErrorState error={error} onRetry={refetch} />;
+
+  const Err = ({ k }: { k: string }) => (errs[k] ? <span className="field-error">{errs[k]}</span> : null);
 
   return (
     <>
@@ -163,6 +239,7 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
           <div className="wizard-body">
             <h2>What do you need the loan for?</h2>
             <p className="wizard-hint">Pick the closest one. You can change it later in My Profile.</p>
+            <Err k="purpose" />
             <div className="purpose-groups">
               {PURPOSE_GROUPS.map((g) => {
                 const Icon = GROUP_ICON[g.group] ?? Briefcase;
@@ -203,12 +280,16 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
               <label>
                 Full name
                 <input value={form.fullName} onChange={(e) => set('fullName', e.target.value)} />
-                {errFor('fullName')}
+                <Err k="fullName" />
               </label>
               <label>
                 Age
-                <input inputMode="numeric" value={form.age} onChange={(e) => set('age', e.target.value)} />
-                {errFor('age')}
+                <input
+                  type="number" inputMode="numeric" min={16} max={100}
+                  value={form.age}
+                  onChange={(e) => set('age', e.target.value.replace(/[^\d]/g, ''))}
+                />
+                <Err k="age" />
               </label>
               <label>
                 Social category
@@ -220,6 +301,7 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
                     </option>
                   ))}
                 </select>
+                <Err k="category" />
               </label>
               <label>
                 Area type
@@ -231,14 +313,17 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
                     </option>
                   ))}
                 </select>
+                <Err k="areaType" />
               </label>
               <label>
                 State
-                <input value={form.state} onChange={(e) => set('state', e.target.value)} placeholder="e.g. Bihar" />
+                <input value={form.state} onChange={(e) => set('state', e.target.value)} placeholder="e.g. Bihar" maxLength={60} />
+                <Err k="state" />
               </label>
               <label>
                 District
-                <input value={form.district} onChange={(e) => set('district', e.target.value)} placeholder="e.g. Sitamarhi" />
+                <input value={form.district} onChange={(e) => set('district', e.target.value)} placeholder="e.g. Sitamarhi" maxLength={60} />
+                <Err k="district" />
               </label>
             </div>
           </div>
@@ -252,17 +337,29 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
             <div className="form-grid">
               <label>
                 Annual household income (₹)
-                <input inputMode="numeric" value={form.annualIncome} onChange={(e) => set('annualIncome', e.target.value)} />
-                {errFor('annualIncomePaise')}
+                <input
+                  type="number" inputMode="numeric" min={0} max={MAX_RUPEES}
+                  value={form.annualIncome}
+                  onChange={(e) => set('annualIncome', e.target.value.replace(/[^\d]/g, ''))}
+                />
+                <Err k="annualIncome" />
               </label>
+              {(isBusiness(form.purpose) || form.purpose === 'agriculture') && (
+                <label>
+                  {form.purpose === 'agriculture' ? 'Which activity?' : 'What is the business / activity?'}
+                  <input
+                    value={form.businessActivity}
+                    onChange={(e) => set('businessActivity', e.target.value)}
+                    placeholder={form.purpose === 'agriculture' ? 'e.g. Dairy unit, crop cultivation' : 'e.g. Furniture repair'}
+                    maxLength={120}
+                  />
+                  <Err k="businessActivity" />
+                </label>
+              )}
               {isBusiness(form.purpose) && (
                 <>
                   <label>
-                    What is the business / activity?
-                    <input value={form.businessActivity} onChange={(e) => set('businessActivity', e.target.value)} placeholder="e.g. Furniture repair" />
-                  </label>
-                  <label>
-                    Stage
+                    Stage <span className="opt-tag">optional</span>
                     <select value={form.businessStage} onChange={(e) => set('businessStage', e.target.value)}>
                       <option value="">Select…</option>
                       <option value="idea">Idea / not started</option>
@@ -271,7 +368,7 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
                     </select>
                   </label>
                   <label>
-                    Do you have a business plan / project report?
+                    Business plan / project report? <span className="opt-tag">optional</span>
                     <select value={form.hasBusinessPlan} onChange={(e) => set('hasBusinessPlan', e.target.value)}>
                       <option value="">Not sure</option>
                       <option value="yes">Yes</option>
@@ -280,16 +377,16 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
                   </label>
                 </>
               )}
-              {form.purpose === 'agriculture' && (
-                <label>
-                  Which activity?
-                  <input value={form.businessActivity} onChange={(e) => set('businessActivity', e.target.value)} placeholder="e.g. Dairy unit, crop cultivation, fisheries" />
-                </label>
-              )}
               {isStudy(form.purpose) && (
                 <label>
                   Course / programme
-                  <input value={form.educationCourse} onChange={(e) => set('educationCourse', e.target.value)} placeholder="e.g. ITI — Electrician" />
+                  <input
+                    value={form.educationCourse}
+                    onChange={(e) => set('educationCourse', e.target.value)}
+                    placeholder="e.g. ITI — Electrician"
+                    maxLength={120}
+                  />
+                  <Err k="educationCourse" />
                 </label>
               )}
             </div>
@@ -302,30 +399,40 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
             <h2>The money</h2>
             <p className="wizard-hint">
               These are three different figures. A scheme’s “% of project cost” cap applies to the <b>project cost</b>, not
-              to your requested loan.
+              to your requested loan. Enter whole rupees.
             </p>
             <div className="form-grid">
               <label>
                 Total project cost (₹)
-                <input inputMode="numeric" value={form.projectCost} onChange={(e) => set('projectCost', e.target.value)} />
-                {errFor('projectCostPaise')}
+                <input
+                  type="number" inputMode="numeric" min={1} max={MAX_RUPEES}
+                  value={form.projectCost}
+                  onChange={(e) => set('projectCost', e.target.value.replace(/[^\d]/g, ''))}
+                />
+                <Err k="projectCost" />
               </label>
               <label>
-                Your own contribution (₹)
-                <input inputMode="numeric" value={form.ownContribution} onChange={(e) => set('ownContribution', e.target.value)} />
-                {errFor('ownContributionPaise')}
+                Your own contribution (₹) <span className="opt-tag">optional</span>
+                <input
+                  type="number" inputMode="numeric" min={0} max={MAX_RUPEES}
+                  value={form.ownContribution}
+                  onChange={(e) => set('ownContribution', e.target.value.replace(/[^\d]/g, ''))}
+                />
+                <Err k="ownContribution" />
               </label>
               <label>
                 Loan you are requesting (₹)
-                <input inputMode="numeric" value={form.requestedLoan} onChange={(e) => set('requestedLoan', e.target.value)} />
-                {errFor('requestedLoanPaise')}
+                <input
+                  type="number" inputMode="numeric" min={1} max={MAX_RUPEES}
+                  value={form.requestedLoan}
+                  onChange={(e) => set('requestedLoan', e.target.value.replace(/[^\d]/g, ''))}
+                />
+                <Err k="requestedLoan" />
               </label>
             </div>
-            {gap != null && gap !== 0 && (
-              <p className={`inline-note ${gap > 0 ? 'warn' : ''}`}>
-                {gap > 0
-                  ? `Own contribution + loan is ₹${gap.toLocaleString('en-IN')} short of the project cost. Decide how that gap will be met.`
-                  : `Own contribution + loan is ₹${Math.abs(gap).toLocaleString('en-IN')} more than the project cost.`}
+            {gap != null && gap > 0 && !errs.requestedLoan && (
+              <p className="inline-note warn">
+                Own contribution + loan is {inr(gap)} short of the project cost. Decide how that gap will be met.
               </p>
             )}
           </div>
@@ -343,11 +450,16 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
                   <div><small>Age</small><b>{form.age || '—'}</b></div>
                   <div><small>Category</small><b>{CATEGORY_LABELS[form.category] ?? '—'}</b></div>
                   <div><small>Location</small><b>{[form.district, form.state].filter(Boolean).join(', ') || '—'} · {AREA_LABELS[form.areaType] ?? '—'}</b></div>
-                  <div><small>Annual income</small><b>{form.annualIncome ? `₹${Number(form.annualIncome).toLocaleString('en-IN')}` : '—'}</b></div>
-                  <div><small>Project cost</small><b>{form.projectCost ? `₹${Number(form.projectCost).toLocaleString('en-IN')}` : '—'}</b></div>
-                  <div><small>Own contribution</small><b>{form.ownContribution ? `₹${Number(form.ownContribution).toLocaleString('en-IN')}` : '—'}</b></div>
-                  <div><small>Requested loan</small><b>{form.requestedLoan ? `₹${Number(form.requestedLoan).toLocaleString('en-IN')}` : '—'}</b></div>
+                  <div><small>Annual income</small><b>{form.annualIncome ? inr(Number(form.annualIncome)) : '—'}</b></div>
+                  <div><small>Project cost</small><b>{form.projectCost ? inr(Number(form.projectCost)) : '—'}</b></div>
+                  <div><small>Own contribution</small><b>{form.ownContribution ? inr(Number(form.ownContribution)) : '—'}</b></div>
+                  <div><small>Requested loan</small><b>{form.requestedLoan ? inr(Number(form.requestedLoan)) : '—'}</b></div>
                 </div>
+                {Object.keys(errs).length > 0 && (
+                  <p className="inline-note warn" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                    <AlertTriangle size={14} /> Fix the highlighted answer, then come back here. Use “Back” to step through.
+                  </p>
+                )}
                 <div className="wizard-cta">
                   <Button onClick={submit} loading={update.isPending}>
                     <Sparkles size={16} style={{ marginRight: 6 }} /> See my matching schemes
@@ -380,14 +492,10 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
         {/* nav */}
         {!(step === 4 && saved) && (
           <div className="wizard-nav">
-            <button className="button soft" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
+            <button className="button soft" onClick={() => { setErrs({}); setStep((s) => Math.max(0, s - 1)); }} disabled={step === 0}>
               <ArrowLeft size={15} style={{ marginRight: 4 }} /> Back
             </button>
-            {step < 4 && (
-              <Button onClick={() => setStep((s) => s + 1)} disabled={!canNext}>
-                Continue
-              </Button>
-            )}
+            {step < 4 && <Button onClick={next}>Continue</Button>}
           </div>
         )}
       </article>

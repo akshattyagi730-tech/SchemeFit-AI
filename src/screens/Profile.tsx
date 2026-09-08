@@ -63,11 +63,51 @@ export function Profile() {
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   if (isLoading || !form || !data) return <Loading label="Loading your profile…" />;
 
-  const set = (k: keyof FormState, v: string) => setForm((f) => (f ? { ...f, [k]: v } : f));
+  const MAX_RUPEES = 100_000_000; // ₹10 crore — matches the server cap
+  const FIELD_TO_PATH: Partial<Record<keyof FormState, string>> = {
+    annualIncome: 'annualIncomePaise',
+    projectCost: 'projectCostPaise',
+    ownContribution: 'ownContributionPaise',
+    requestedLoan: 'requestedLoanPaise',
+  };
+  const set = (k: keyof FormState, v: string) => {
+    setForm((f) => (f ? { ...f, [k]: v } : f));
+    const path = FIELD_TO_PATH[k] ?? k;
+    setFieldErrors((e) => (e[path] || e[k] ? { ...e, [path]: '', [k]: '' } : e));
+  };
   const num = (s: string) => (s.trim() === '' ? null : Number(s));
+
+  /** Client-side validation so garbage never silently coerces to null on save. */
+  function validate(f: FormState): Record<string, string> {
+    const e: Record<string, string> = {};
+    if (f.fullName.trim() && f.fullName.trim().length < 2) e.fullName = 'Enter your full name';
+    if (f.age.trim() !== '') {
+      if (!/^\d+$/.test(f.age.trim())) e.age = 'Age must be a whole number (digits only)';
+      else if (Number(f.age) < 16 || Number(f.age) > 100) e.age = 'Age must be between 16 and 100';
+    }
+    const money: [keyof FormState, string][] = [
+      ['annualIncome', 'annualIncomePaise'],
+      ['projectCost', 'projectCostPaise'],
+      ['ownContribution', 'ownContributionPaise'],
+      ['requestedLoan', 'requestedLoanPaise'],
+    ];
+    for (const [k, path] of money) {
+      const raw = f[k].trim();
+      if (raw === '') continue;
+      if (!/^\d+$/.test(raw)) e[path] = 'Enter a whole rupee amount (digits only)';
+      else if (Number(raw) > MAX_RUPEES) e[path] = `Enter rupees, not paise — maximum ₹${MAX_RUPEES.toLocaleString('en-IN')}`;
+    }
+    return e;
+  }
 
   async function save() {
     if (!form) return;
+    const clientErrs = validate(form);
+    if (Object.keys(clientErrs).length) {
+      setFieldErrors(clientErrs);
+      errorToast('Please correct the highlighted fields.');
+      return;
+    }
     setFieldErrors({});
     const patch: Record<string, unknown> = {
       fullName: form.fullName.trim(),
@@ -123,12 +163,12 @@ export function Profile() {
           </label>
           <label>
             Age
-            <input inputMode="numeric" value={form.age} onChange={(e) => set('age', e.target.value)} />
+            <input type="number" inputMode="numeric" min={0} value={form.age} onChange={(e) => set('age', e.target.value.replace(/[^0-9]/g, ''))} />
             {err('age')}
           </label>
           <label>
             Annual household income (₹)
-            <input inputMode="numeric" value={form.annualIncome} onChange={(e) => set('annualIncome', e.target.value)} />
+            <input type="number" inputMode="numeric" min={0} value={form.annualIncome} onChange={(e) => set('annualIncome', e.target.value.replace(/[^0-9]/g, ''))} />
             {err('annualIncomePaise')}
           </label>
           <label>
@@ -190,17 +230,17 @@ export function Profile() {
           </label>
           <label>
             Project cost (₹)
-            <input inputMode="numeric" value={form.projectCost} onChange={(e) => set('projectCost', e.target.value)} />
+            <input type="number" inputMode="numeric" min={0} value={form.projectCost} onChange={(e) => set('projectCost', e.target.value.replace(/[^0-9]/g, ''))} />
             {err('projectCostPaise')}
           </label>
           <label>
             Own contribution (₹)
-            <input inputMode="numeric" value={form.ownContribution} onChange={(e) => set('ownContribution', e.target.value)} />
+            <input type="number" inputMode="numeric" min={0} value={form.ownContribution} onChange={(e) => set('ownContribution', e.target.value.replace(/[^0-9]/g, ''))} />
             {err('ownContributionPaise')}
           </label>
           <label>
             Requested loan (₹)
-            <input inputMode="numeric" value={form.requestedLoan} onChange={(e) => set('requestedLoan', e.target.value)} />
+            <input type="number" inputMode="numeric" min={0} value={form.requestedLoan} onChange={(e) => set('requestedLoan', e.target.value.replace(/[^0-9]/g, ''))} />
             {err('requestedLoanPaise')}
           </label>
         </div>

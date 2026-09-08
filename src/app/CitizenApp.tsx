@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Bell, ChevronDown, Globe2, Menu, Search, X } from 'lucide-react';
 import { Logo, PrototypeBanner } from '../components/ui';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { AshokaEmblem } from '../components/AshokaEmblem';
 import { navFor } from './nav';
 import { useLogout, useMe, useNotifications, useMarkNotificationsRead } from '../api/hooks';
@@ -185,7 +186,9 @@ export function CitizenApp({ user }: { user: AuthUser }) {
         )}
         <PrototypeBanner />
 
-        <div className="page">{screen}</div>
+        <div className="page">
+          <ErrorBoundary key={path}>{screen}</ErrorBoundary>
+        </div>
 
         <footer>
           <Logo />
