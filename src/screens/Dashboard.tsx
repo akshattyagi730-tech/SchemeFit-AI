@@ -1,4 +1,4 @@
-import { FileText, ShieldCheck, UsersRound, ArrowRight, AlertTriangle, Sparkles, CheckCircle2, IndianRupee } from 'lucide-react';
+import { FileText, ShieldCheck, UsersRound, ArrowRight, AlertTriangle, Sparkles, CheckCircle2, IndianRupee, Compass } from 'lucide-react';
 import { MadeInIndiaMark } from '../components/MadeInIndiaMark';
 import { Button, ScoreRing, Loading, ErrorState, EmptyState, DemoBadge } from '../components/ui';
 import { useRecommendations, useApplication, useDocuments, useRouting } from '../api/hooks';
@@ -59,8 +59,23 @@ export function Dashboard({ navigate }: { navigate: (to: string) => void }) {
   const topRec = recs?.eligible[0];
   const readiness = docs?.readiness;
 
+  const needsSetup = recs && !recs.profileComplete;
+
   return (
     <>
+      {needsSetup && (
+        <div className="getstarted-cta">
+          <span className="getstarted-icon">
+            <Compass />
+          </span>
+          <div>
+            <b>Let’s find the schemes and loans for you</b>
+            <span>Answer a few questions — what you need, who you are, the amounts — and we’ll match every scheme and list the documents.</span>
+          </div>
+          <Button onClick={() => navigate('/start')}>Get started</Button>
+        </div>
+      )}
+
       <section className="welcome">
         <div>
           <h1>

@@ -7,6 +7,7 @@ import {
   Send,
   FileText,
   BarChart3,
+  Compass,
   type LucideIcon,
 } from 'lucide-react';
 import type { Role } from '../api/types';
@@ -20,6 +21,7 @@ export interface NavItem {
 
 export const NAV: NavItem[] = [
   { label: 'Dashboard', route: '/', icon: Home, roles: ['CITIZEN', 'ADMIN'] },
+  { label: 'Get Started', route: '/start', icon: Compass, roles: ['CITIZEN'] },
   { label: 'My Profile', route: '/profile', icon: UserRound, roles: ['CITIZEN'] },
   { label: 'Scheme Matches', route: '/schemes', icon: ClipboardList, roles: ['CITIZEN'] },
   { label: 'Loan Planner', route: '/loan-planner', icon: Calculator, roles: ['CITIZEN'] },

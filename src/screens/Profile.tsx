@@ -8,7 +8,10 @@ import type { AreaType, Purpose, SocialCategory } from '../api/types';
 
 const CATEGORIES: SocialCategory[] = ['GENERAL', 'OBC', 'SC', 'ST', 'EWS', 'MINORITY'];
 const AREAS: AreaType[] = ['rural', 'urban', 'semi_urban'];
-const PURPOSES: Purpose[] = ['business_new', 'business_expansion', 'equipment_purchase', 'working_capital', 'education', 'skilling'];
+const PURPOSES: Purpose[] = [
+  'business_new', 'business_expansion', 'equipment_purchase', 'working_capital',
+  'education', 'skilling', 'agriculture', 'housing', 'vehicle', 'personal',
+];
 
 type FormState = {
   fullName: string;

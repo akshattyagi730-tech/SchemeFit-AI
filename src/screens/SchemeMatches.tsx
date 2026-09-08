@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Sparkles, X, CheckCircle2, AlertTriangle, CircleHelp } from 'lucide-react';
 import { PageTitle, Button, ScoreRing, StatusPill, Loading, ErrorState, EmptyState, DemoBadge } from '../components/ui';
+import { DocumentChecklist } from '../components/DocumentChecklist';
 import { useRecommendations, useCreateApplication, useApplications } from '../api/hooks';
 import { useActiveApplication } from '../app/active-application';
 import { useToast } from '../app/toast';
@@ -87,6 +88,12 @@ export function SchemeMatches({ navigate }: { navigate: (to: string) => void }) 
 
       {eligible.length === 0 && needsInfo.length === 0 && ineligible.length === 0 && (
         <EmptyState title="No schemes to show yet" hint="Add your profile details to see matches." />
+      )}
+
+      {(eligible.length > 0 || needsInfo.length > 0) && (
+        <div style={{ marginBottom: 16 }}>
+          <DocumentChecklist compact />
+        </div>
       )}
 
       {eligible.length > 0 && <h3 className="section-h">Eligible &amp; ranked ({eligible.length})</h3>}

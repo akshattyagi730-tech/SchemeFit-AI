@@ -15,7 +15,21 @@ export const PURPOSE_LABELS: Record<string, string> = {
   working_capital: 'Working capital',
   education: 'Formal education',
   skilling: 'Certified skilling course',
+  agriculture: 'Agriculture or allied activity',
+  housing: 'Build, buy or improve a home',
+  vehicle: 'Vehicle for livelihood',
+  personal: 'Personal / consumption need',
 };
+
+/** Groups for the guided intake wizard. Keys match the API `Purpose` union. */
+export const PURPOSE_GROUPS: { group: string; hint: string; purposes: string[] }[] = [
+  { group: 'Business & self-employment', hint: 'Start, run or grow a shop, unit, service or trade', purposes: ['business_new', 'business_expansion', 'equipment_purchase', 'working_capital'] },
+  { group: 'Education & skilling', hint: 'College, higher studies or a certified skill course', purposes: ['education', 'skilling'] },
+  { group: 'Agriculture & allied', hint: 'Farming, dairy, poultry, fisheries, farm infrastructure', purposes: ['agriculture'] },
+  { group: 'Home', hint: 'Construction, purchase or extension of a house', purposes: ['housing'] },
+  { group: 'Vehicle for livelihood', hint: 'e-rickshaw, auto, goods carrier, delivery vehicle', purposes: ['vehicle'] },
+  { group: 'Personal', hint: 'A personal need with no dedicated scheme', purposes: ['personal'] },
+];
 
 export const CATEGORY_LABELS: Record<string, string> = {
   GENERAL: 'General',

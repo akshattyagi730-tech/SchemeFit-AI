@@ -8,6 +8,7 @@ import { api } from './client';
 import type {
   AdminKpis,
   Application,
+  DocumentChecklistResponse,
   DocumentsResponse,
   Envelope,
   FinancePlan,
@@ -27,6 +28,7 @@ export const qk = {
   schemes: ['schemes'] as const,
   scheme: (id: string) => ['scheme', id] as const,
   recommendations: ['recommendations'] as const,
+  documentChecklist: ['recommendations', 'documents'] as const,
   partners: (schemeCode?: string) => ['partners', schemeCode ?? 'all'] as const,
   routing: (schemeCode: string) => ['routing', schemeCode] as const,
   applications: (scope: string) => ['applications', scope] as const,
@@ -104,6 +106,7 @@ export function useUpdateProfile() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: qk.profile });
       qc.invalidateQueries({ queryKey: qk.recommendations });
+      qc.invalidateQueries({ queryKey: qk.documentChecklist });
       qc.invalidateQueries({ queryKey: qk.me });
     },
   });
@@ -123,6 +126,14 @@ export function useRecommendations(enabled = true) {
   return useQuery({
     queryKey: qk.recommendations,
     queryFn: () => unwrap(api.get<Envelope<RecommendationsResponse>>('/recommendations')),
+    enabled,
+  });
+}
+
+export function useDocumentChecklist(enabled = true) {
+  return useQuery({
+    queryKey: qk.documentChecklist,
+    queryFn: () => unwrap(api.get<Envelope<DocumentChecklistResponse>>('/recommendations/documents')),
     enabled,
   });
 }
@@ -252,6 +263,7 @@ export function useUploadDocument(appId: string) {
       qc.invalidateQueries({ queryKey: qk.application(appId) });
       qc.invalidateQueries({ queryKey: ['applications'] });
       qc.invalidateQueries({ queryKey: qk.notifications });
+      qc.invalidateQueries({ queryKey: qk.documentChecklist });
     },
   });
 }
@@ -266,6 +278,7 @@ export function useReviewDocument(appId: string) {
       qc.invalidateQueries({ queryKey: qk.application(appId) });
       qc.invalidateQueries({ queryKey: ['partner'] });
       qc.invalidateQueries({ queryKey: qk.notifications });
+      qc.invalidateQueries({ queryKey: qk.documentChecklist });
     },
   });
 }

@@ -27,6 +27,10 @@ const PURPOSE_LABELS: Record<string, string> = {
   working_capital: 'working capital',
   education: 'formal education',
   skilling: 'a certified skilling course',
+  agriculture: 'agriculture or an allied activity',
+  housing: 'building, buying or improving a home',
+  vehicle: 'a vehicle used for livelihood',
+  personal: 'a personal / consumption need',
 };
 
 export interface SchemeRuleSet {

@@ -6,6 +6,7 @@ import { navFor } from './nav';
 import { useLogout, useMe, useNotifications, useMarkNotificationsRead } from '../api/hooks';
 import { formatDate } from '../lib/format';
 import { Dashboard } from '../screens/Dashboard';
+import { GetStarted } from '../screens/GetStarted';
 import { Profile } from '../screens/Profile';
 import { SchemeMatches } from '../screens/SchemeMatches';
 import { LoanPlanner } from '../screens/LoanPlanner';
@@ -74,6 +75,8 @@ export function CitizenApp({ user }: { user: AuthUser }) {
 
   const screen = (() => {
     switch (path) {
+      case '/start':
+        return <GetStarted navigate={navigate} />;
       case '/profile':
         return <Profile />;
       case '/schemes':

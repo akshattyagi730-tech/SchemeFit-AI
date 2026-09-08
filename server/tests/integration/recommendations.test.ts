@@ -93,4 +93,34 @@ describe('recommendations (deterministic eligibility + ranking)', () => {
     expect(res.status).toBe(422);
     expect(res.body.error.fieldErrors.length).toBeGreaterThan(0);
   });
+
+  it('document checklist: de-duplicated union across eligible + needs-info schemes, ineligible excluded', async () => {
+    await installDemoReferenceData();
+    const c = await citizenWithProfile('rec7@example.com', RAVI_PROFILE);
+
+    const rec = await c.get('/api/v1/recommendations').expect(200);
+    const ineligibleCodes: string[] = rec.body.data.ineligible.map((e: { scheme: { code: string } }) => e.scheme.code);
+
+    const res = await c.get('/api/v1/recommendations/documents').expect(200);
+    const d = res.body.data;
+
+    // considered = eligible + needs_information only
+    expect(d.consideredSchemes.length).toBe(rec.body.data.counts.eligible + rec.body.data.counts.needsInformation);
+    const consideredCodes = d.consideredSchemes.map((s: { code: string }) => s.code);
+    for (const code of ineligibleCodes) expect(consideredCodes).not.toContain(code);
+
+    // every scheme requires an identity proof, so it must be a single mandatory line
+    const idProof = d.items.find((i: { type: string }) => i.type === 'identity_proof');
+    expect(idProof).toBeTruthy();
+    expect(idProof.mandatory).toBe(true);
+    expect(idProof.requiredByCount).toBeGreaterThan(1); // de-duplicated across many schemes
+    expect(idProof.status).toBe('missing'); // nothing uploaded yet
+
+    // types are unique (de-duplicated)
+    const types = d.items.map((i: { type: string }) => i.type);
+    expect(new Set(types).size).toBe(types.length);
+
+    expect(d.summary.mandatoryDocuments).toBeGreaterThan(0);
+    expect(d.summary.mandatoryProvided).toBe(0);
+  });
 });

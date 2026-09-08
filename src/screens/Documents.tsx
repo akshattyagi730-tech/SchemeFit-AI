@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { Sparkles, FileText, Upload, Check, AlertTriangle, Clock, Download } from 'lucide-react';
-import { PageTitle, Button, ScoreRing, Loading, ErrorState, EmptyState } from '../components/ui';
+import { PageTitle, Button, ScoreRing, Loading, ErrorState } from '../components/ui';
+import { DocumentChecklist } from '../components/DocumentChecklist';
 import { useApplication, useDocuments, useUploadDocument } from '../api/hooks';
 import { useActiveApplication } from '../app/active-application';
 import { useToast } from '../app/toast';
@@ -30,8 +31,10 @@ export function Documents({ navigate }: { navigate: (to: string) => void }) {
   if (!activeId)
     return (
       <>
-        <PageTitle title="Documents">Keep essential documents ready to improve your application readiness.</PageTitle>
-        <EmptyState title="No application selected" hint="Start an application first — required documents come from the selected scheme." />
+        <PageTitle title="Documents">
+          Start an application to upload and track documents. Meanwhile, here is everything your matched schemes ask for.
+        </PageTitle>
+        <DocumentChecklist />
         <div style={{ marginTop: 12 }}>
           <Button onClick={() => navigate('/schemes')}>Go to Scheme Matches</Button>
         </div>

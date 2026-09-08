@@ -16,8 +16,22 @@ export const PURPOSES = [
   'working_capital',
   'education',
   'skilling',
+  'agriculture',
+  'housing',
+  'vehicle',
+  'personal',
 ] as const;
 export type Purpose = (typeof PURPOSES)[number];
+
+/** Purpose groups for the guided intake wizard (frontend uses the same keys). */
+export const PURPOSE_GROUPS: { group: string; purposes: Purpose[] }[] = [
+  { group: 'Business & self-employment', purposes: ['business_new', 'business_expansion', 'equipment_purchase', 'working_capital'] },
+  { group: 'Education & skilling', purposes: ['education', 'skilling'] },
+  { group: 'Agriculture & allied', purposes: ['agriculture'] },
+  { group: 'Home', purposes: ['housing'] },
+  { group: 'Vehicle for livelihood', purposes: ['vehicle'] },
+  { group: 'Personal', purposes: ['personal'] },
+];
 
 export const MORATORIUM_INTEREST_HANDLING = ['serviced', 'capitalised'] as const;
 export type MoratoriumInterestHandling = (typeof MORATORIUM_INTEREST_HANDLING)[number];

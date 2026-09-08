@@ -26,7 +26,11 @@ export type Purpose =
   | 'equipment_purchase'
   | 'working_capital'
   | 'education'
-  | 'skilling';
+  | 'skilling'
+  | 'agriculture'
+  | 'housing'
+  | 'vehicle'
+  | 'personal';
 
 export interface CitizenProfile {
   id: string;
@@ -125,6 +129,32 @@ export interface RecommendationsResponse {
   eligible: Recommendation[];
   needsInformation: Recommendation[];
   ineligible: Recommendation[];
+  notes: string[];
+}
+
+export interface DocChecklistItem {
+  type: string;
+  label: string;
+  mandatory: boolean;
+  status: 'missing' | 'uploaded' | 'under_review' | 'verified' | 'changes_requested';
+  provided: boolean;
+  requiredByCount: number;
+  optionalForCount: number;
+  requiredBy: { code: string; name: string }[];
+  optionalFor: { code: string; name: string }[];
+}
+
+export interface DocumentChecklistResponse {
+  generatedAt: string;
+  consideredSchemes: { code: string; name: string; status: 'eligible' | 'needs_information' }[];
+  summary: {
+    consideredSchemeCount: number;
+    distinctDocuments: number;
+    mandatoryDocuments: number;
+    mandatoryProvided: number;
+    mandatoryVerified: number;
+  };
+  items: DocChecklistItem[];
   notes: string[];
 }
 
