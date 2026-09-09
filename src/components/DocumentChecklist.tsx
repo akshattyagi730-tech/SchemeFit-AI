@@ -77,9 +77,11 @@ export function DocumentChecklist({ compact = false }: { compact?: boolean }) {
                   </div>
                 )}
               </div>
-              <span className={`case-doc-status ${it.status === 'verified' ? 'ok' : it.status === 'missing' ? 'miss' : 'wait'}`}>
-                <Icon size={13} /> {L.docState(it.status)}
-              </span>
+              {it.status !== 'missing' && (
+                <span className={`case-doc-status ${it.status === 'verified' ? 'ok' : 'wait'}`}>
+                  <Icon size={13} /> {L.docState(it.status)}
+                </span>
+              )}
             </div>
           );
         })}
