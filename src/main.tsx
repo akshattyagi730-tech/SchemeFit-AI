@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import './styles.css';
-import './components/workspace-switch.css';
 import './components/app-additions.css';
 import { ToastProvider } from './app/toast';
 import { LangProvider, useLang } from './i18n';

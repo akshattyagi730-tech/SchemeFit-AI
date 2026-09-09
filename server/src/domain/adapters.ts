@@ -62,6 +62,7 @@ export function profileToFacts(p: CitizenProfileDoc): ApplicantFacts {
     age: p.age ?? null,
     annualIncomePaise: p.annualIncomePaise ?? null,
     category: (p.category as ApplicantFacts['category']) ?? null,
+    obcCreamyLayer: p.obcCreamyLayer ?? null,
     state: p.state ?? null,
     district: p.district ?? null,
     areaType: (p.areaType as ApplicantFacts['areaType']) ?? null,

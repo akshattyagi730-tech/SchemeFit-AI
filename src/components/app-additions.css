@@ -212,6 +212,58 @@ footer { flex-wrap: wrap; }
 .inline-callout { display: flex; align-items: flex-start; gap: 10px; background: #eef7fb; border: 1px solid #cfe6f2; color: #23557a; padding: 10px 14px; font-size: 12px; line-height: 1.45; border-radius: 8px; }
 .inline-callout > svg { color: #2f80b4; flex: none; margin-top: 2px; }
 
+/* ---- Header: functional search + account menu ---- */
+.search-box { position: relative; height: 44px; max-width: 356px; flex: 1; display: flex; align-items: center; gap: 12px; padding: 0 14px; border: 1px solid #cbdff0; background: #f6faff; border-radius: 7px; color: #365488; }
+.search-box > svg { flex: none; color: #6f8bb5; }
+.search-box input { flex: 1; min-width: 0; border: 0; background: transparent; outline: none; font-size: 13px; color: #21447c; }
+.search-box input::placeholder { color: #7f97bd; }
+.search-results { position: absolute; left: 0; right: 0; top: 52px; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 14px 34px rgba(20, 50, 80, 0.16); z-index: 40; padding: 6px; max-height: 62vh; overflow: auto; }
+.search-group + .search-group { border-top: 1px solid #eef2f5; margin-top: 4px; padding-top: 4px; }
+.search-group > small { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #8093b6; padding: 6px 8px 2px; }
+.search-group button { display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; background: transparent; padding: 9px 8px; border-radius: 6px; font-size: 13px; color: #2b4a7c; }
+.search-group button:hover { background: #f2f7fa; }
+.search-group button > svg { flex: none; color: #4f6f9c; }
+.search-group button > span { display: flex; flex-direction: column; min-width: 0; }
+.search-group button em { font-style: normal; font-size: 10px; color: #8093b6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.search-empty { padding: 12px 10px; font-size: 12px; color: #6a80a8; }
+
+.bell-btn { background: transparent; padding: 4px; color: #143059; display: grid; place-items: center; border-radius: 7px; }
+.bell-btn:hover { background: #eef4f7; }
+
+.account-menu { position: relative; }
+button.avatar { cursor: pointer; border: 0; }
+button.avatar:hover { filter: brightness(1.07); }
+.account-pop { position: absolute; right: 0; top: 56px; width: 244px; background: #fff; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 14px 34px rgba(20, 50, 80, 0.16); z-index: 40; padding: 6px; }
+.account-id { display: flex; gap: 10px; align-items: center; padding: 8px 8px 10px; }
+.account-id .avatar.sm { width: 34px; height: 34px; font-size: 12px; }
+.account-id b { font-size: 13px; color: #12305a; display: block; }
+.account-id small { font-size: 11px; color: #768cba; }
+.account-pop > button { display: flex; align-items: center; gap: 9px; width: 100%; text-align: left; background: transparent; padding: 9px 10px; border-radius: 6px; font-size: 13px; color: #2b4a7c; }
+.account-pop > button:hover { background: #f2f7fa; }
+.account-pop > button > svg { flex: none; color: #4f6f9c; }
+.account-pop > button.active { color: #007555; font-weight: 700; }
+.account-pop > button.active > svg { color: #007555; }
+.account-pop > button.danger { color: #c0341b; }
+.account-pop > button.danger > svg { color: #c0341b; }
+.account-sep { height: 1px; background: #eef2f5; margin: 5px 0; }
+.account-heading { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; color: #8093b6; padding: 6px 10px 2px; }
+
+/* Keep notifications + account reachable on mobile; drop the search field there. */
+@media (max-width: 850px) {
+  .head-actions { display: flex; }
+  .search-box { display: none; }
+  .account-pop, .notif-panel { top: 50px; }
+  .notif-panel { width: min(340px, calc(100vw - 28px)); }
+}
+@media (max-width: 600px) {
+  .avatar { width: 40px; height: 40px; font-size: 13px; }
+  .account-pop { width: min(240px, calc(100vw - 28px)); }
+  /* styles.css hides the whole footer on mobile — keep just the disclosure line. */
+  footer { display: flex; margin-top: 0; padding: 10px 15px; }
+  footer > .logo, footer > span, footer .footer-links { display: none; }
+  .footer-disc { margin-top: 0; flex-basis: auto; }
+}
+
 /* ---- Official portal link on scheme cards ---- */
 .official-link {
   display: inline-flex; align-items: center; gap: 4px;

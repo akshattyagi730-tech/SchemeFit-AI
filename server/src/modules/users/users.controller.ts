@@ -16,6 +16,7 @@ function serializeProfile(p: CitizenProfileDoc) {
     age: o.age,
     annualIncomePaise: o.annualIncomePaise,
     category: o.category,
+    obcCreamyLayer: o.obcCreamyLayer,
     state: o.state,
     district: o.district,
     areaType: o.areaType,
@@ -36,6 +37,9 @@ function completeness(p: ReturnType<typeof serializeProfile>): { percent: number
     ['age', p.age != null],
     ['annualIncomePaise', p.annualIncomePaise != null],
     ['category', !!p.category],
+    // OBC applicants must also record their creamy-layer status — reserved-category
+    // schemes (NBCFDC etc.) are limited to the Non-Creamy Layer.
+    ...(p.category === 'OBC' ? ([['obcCreamyLayer', p.obcCreamyLayer != null]] as [string, boolean][]) : []),
     ['state', !!p.state],
     ['district', !!p.district],
     ['areaType', !!p.areaType],

@@ -14,6 +14,7 @@ export interface CitizenProfileAttrs {
   age: number | null;
   annualIncomePaise: number | null;
   category: SocialCategory | null;
+  obcCreamyLayer: boolean | null;
   state: string | null;
   district: string | null;
   areaType: AreaType | null;
@@ -36,6 +37,7 @@ const citizenProfileSchema = new Schema<CitizenProfileAttrs>(
     age: { type: Number, min: 16, max: 100, default: null },
     annualIncomePaise: { type: Number, min: 0, default: null },
     category: { type: String, enum: [...SOCIAL_CATEGORIES, null], default: null },
+    obcCreamyLayer: { type: Boolean, default: null },
     state: { type: String, trim: true, default: null },
     district: { type: String, trim: true, default: null },
     areaType: { type: String, enum: [...AREA_TYPES, null], default: null },

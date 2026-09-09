@@ -30,12 +30,12 @@ const AREAS = ['rural', 'urban', 'semi_urban'];
 const MAX_RUPEES = 100_000_000;
 
 type Form = {
-  purpose: string; fullName: string; age: string; category: string; state: string; district: string; areaType: string;
+  purpose: string; fullName: string; age: string; category: string; obcCreamyLayer: string; state: string; district: string; areaType: string;
   annualIncome: string; businessActivity: string; businessStage: string; hasBusinessPlan: string; educationCourse: string;
   projectCost: string; ownContribution: string; requestedLoan: string;
 };
 const EMPTY: Form = {
-  purpose: '', fullName: '', age: '', category: '', state: '', district: '', areaType: '',
+  purpose: '', fullName: '', age: '', category: '', obcCreamyLayer: '', state: '', district: '', areaType: '',
   annualIncome: '', businessActivity: '', businessStage: '', hasBusinessPlan: '', educationCourse: '',
   projectCost: '', ownContribution: '', requestedLoan: '',
 };
@@ -48,7 +48,7 @@ const isStudy = (p: string) => p === 'education' || p === 'skilling';
 const inr = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
 
 const FIELD_STEP: Record<string, number> = {
-  fullName: 1, age: 1, category: 1, state: 1, district: 1, areaType: 1,
+  fullName: 1, age: 1, category: 1, obcCreamyLayer: 1, state: 1, district: 1, areaType: 1,
   annualIncome: 2, annualIncomePaise: 2, businessActivity: 2, educationCourse: 2,
   projectCost: 3, projectCostPaise: 3, ownContribution: 3, ownContributionPaise: 3, requestedLoan: 3, requestedLoanPaise: 3,
 };
@@ -74,7 +74,9 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
     const p = data.profile;
     setForm({
       purpose: p.purpose ?? '', fullName: p.fullName ?? '', age: p.age != null ? String(p.age) : '',
-      category: p.category ?? '', state: p.state ?? '', district: p.district ?? '', areaType: p.areaType ?? '',
+      category: p.category ?? '',
+      obcCreamyLayer: p.obcCreamyLayer == null ? '' : p.obcCreamyLayer ? 'cl' : 'ncl',
+      state: p.state ?? '', district: p.district ?? '', areaType: p.areaType ?? '',
       annualIncome: rupeeStr(p.annualIncomePaise),
       businessActivity: p.businessDetails?.activity ?? '', businessStage: p.businessDetails?.stage ?? '',
       hasBusinessPlan: p.hasBusinessPlan == null ? '' : p.hasBusinessPlan ? 'yes' : 'no',
@@ -110,6 +112,7 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
       else if (!/^\d+$/.test(form.age.trim()) || !Number.isInteger(age)) e.age = { key: 'v.ageWhole' };
       else if (age < 16 || age > 100) e.age = { key: 'v.ageRange' };
       if (!form.category) e.category = { key: 'v.selectCategory' };
+      if (form.category === 'OBC' && !form.obcCreamyLayer) e.obcCreamyLayer = { key: 'v.selectObcStatus' };
       if (!form.state.trim()) e.state = { key: 'v.enterState' };
       else { const k = placeErrorKey(form.state); if (k) e.state = { key: k }; }
       if (!form.district.trim()) e.district = { key: 'v.enterDistrict' };
@@ -169,6 +172,7 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
       age: num(form.age),
       annualIncomePaise: form.annualIncome.trim() === '' ? null : rupeesToPaise(Number(form.annualIncome)),
       category: form.category || null,
+      obcCreamyLayer: form.category === 'OBC' ? (form.obcCreamyLayer === '' ? null : form.obcCreamyLayer === 'cl') : null,
       state: form.state.trim() || null,
       district: form.district.trim() || null,
       areaType: form.areaType || null,
@@ -276,6 +280,18 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
                 </select>
                 <Err k="category" />
               </label>
+              {form.category === 'OBC' && (
+                <label>
+                  {t('wiz.obcStatus')}
+                  <select value={form.obcCreamyLayer} onChange={(e) => set('obcCreamyLayer', e.target.value)}>
+                    <option value="">{t('common.select')}</option>
+                    <option value="ncl">{t('obc.ncl')}</option>
+                    <option value="cl">{t('obc.cl')}</option>
+                  </select>
+                  <span className="inline-note" style={{ marginTop: 2 }}>{t('wiz.obcStatusHint')}</span>
+                  <Err k="obcCreamyLayer" />
+                </label>
+              )}
               <label>
                 {t('wiz.areaType')}
                 <select value={form.areaType} onChange={(e) => set('areaType', e.target.value)}>
@@ -386,6 +402,9 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
                   <div><small>{t('wiz.rv.name')}</small><b>{form.fullName || '—'}</b></div>
                   <div><small>{t('wiz.rv.age')}</small><b>{form.age || '—'}</b></div>
                   <div><small>{t('wiz.rv.category')}</small><b>{L.category(form.category)}</b></div>
+                  {form.category === 'OBC' && (
+                    <div><small>{t('wiz.rv.obcStatus')}</small><b>{form.obcCreamyLayer === 'cl' ? t('obc.cl') : form.obcCreamyLayer === 'ncl' ? t('obc.ncl') : '—'}</b></div>
+                  )}
                   <div><small>{t('wiz.rv.location')}</small><b>{[form.district, form.state].filter(Boolean).join(', ') || '—'} · {L.area(form.areaType)}</b></div>
                   <div><small>{t('wiz.rv.income')}</small><b>{form.annualIncome ? inr(Number(form.annualIncome)) : '—'}</b></div>
                   <div><small>{t('wiz.rv.projectCost')}</small><b>{form.projectCost ? inr(Number(form.projectCost)) : '—'}</b></div>

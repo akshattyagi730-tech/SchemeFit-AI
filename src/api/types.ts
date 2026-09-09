@@ -38,6 +38,8 @@ export interface CitizenProfile {
   age: number | null;
   annualIncomePaise: number | null;
   category: SocialCategory | null;
+  /** Only meaningful when category === 'OBC'. true = Creamy Layer, false = Non-Creamy Layer. */
+  obcCreamyLayer: boolean | null;
   state: string | null;
   district: string | null;
   areaType: AreaType | null;

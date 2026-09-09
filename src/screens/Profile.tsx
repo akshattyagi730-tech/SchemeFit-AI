@@ -16,7 +16,7 @@ const PURPOSES = [
 const MAX_RUPEES = 100_000_000;
 
 type FormState = {
-  fullName: string; age: string; annualIncome: string; category: string; state: string; district: string;
+  fullName: string; age: string; annualIncome: string; category: string; obcCreamyLayer: string; state: string; district: string;
   areaType: string; purpose: string; hasBusinessPlan: string; businessActivity: string; educationCourse: string;
   projectCost: string; ownContribution: string; requestedLoan: string;
 };
@@ -44,6 +44,7 @@ export function Profile() {
       age: p.age != null ? String(p.age) : '',
       annualIncome: rupeeStr(p.annualIncomePaise),
       category: p.category ?? '',
+      obcCreamyLayer: p.obcCreamyLayer == null ? '' : p.obcCreamyLayer ? 'cl' : 'ncl',
       state: p.state ?? '',
       district: p.district ?? '',
       areaType: p.areaType ?? '',
@@ -113,6 +114,7 @@ export function Profile() {
       age: num(form.age),
       annualIncomePaise: form.annualIncome.trim() === '' ? null : rupeesToPaise(Number(form.annualIncome)),
       category: form.category || null,
+      obcCreamyLayer: form.category === 'OBC' ? (form.obcCreamyLayer === '' ? null : form.obcCreamyLayer === 'cl') : null,
       state: form.state.trim() || null,
       district: form.district.trim() || null,
       areaType: form.areaType || null,
@@ -182,6 +184,17 @@ export function Profile() {
               ))}
             </select>
           </label>
+          {form.category === 'OBC' && (
+            <label>
+              {t('pf.obcStatus')}
+              <select value={form.obcCreamyLayer} onChange={(e) => set('obcCreamyLayer', e.target.value)}>
+                <option value="">{t('common.select')}</option>
+                <option value="ncl">{t('obc.ncl')}</option>
+                <option value="cl">{t('obc.cl')}</option>
+              </select>
+              <span className="inline-note" style={{ marginTop: 2 }}>{t('wiz.obcStatusHint')}</span>
+            </label>
+          )}
           <label>
             {t('pf.state')}
             <input value={form.state} onChange={(e) => set('state', e.target.value)} maxLength={60} />

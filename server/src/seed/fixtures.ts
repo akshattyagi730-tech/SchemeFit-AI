@@ -250,7 +250,7 @@ export const schemes = [
     program: 'NBCFDC concessional term loan — demonstration rule set',
     displayCategory: 'Term Loan',
     description:
-      'Concessional term finance for Other Backward Classes entrepreneurs below a household income ceiling, routed via State Channelising Agencies. Demonstration figures only.',
+      'Concessional term finance for Other Backward Classes (Non-Creamy Layer) entrepreneurs below a household income ceiling, routed via State Channelising Agencies. Demonstration figures only.',
     supportedPurposes: ['business_new', 'business_expansion', 'equipment_purchase'],
     eligibility: { categories: ['OBC'], minAge: 18, maxAge: 55, maxAnnualIncomePaise: R(3_00_000), requiresBusinessPlan: true },
     financing: { minAmountPaise: R(50_000), maxAmountPaise: R(15_00_000), maxProjectCostSharePct: 90, minOwnContributionPct: 10 },
@@ -1348,6 +1348,27 @@ export const citizens: SeedCitizen[] = [
       projectCostPaise: R(1_20_000),
       ownContributionPaise: R(10_000),
       requestedLoanPaise: R(1_10_000),
+    },
+  },
+  {
+    email: 'sunita.yadav@citizens.schemefit.dev',
+    password: 'CitizenSunita!2026',
+    fullName: 'Sunita Yadav',
+    profile: {
+      age: 30,
+      annualIncomePaise: R(2_20_000),
+      category: 'OBC',
+      obcCreamyLayer: false, // Non-Creamy Layer -> eligible for NBCFDC-style schemes
+      state: 'Madhya Pradesh',
+      district: 'Sagar',
+      areaType: 'semi_urban',
+      location: { lat: 23.8388, lng: 78.7378 },
+      purpose: 'business_new',
+      businessDetails: { activity: 'Dairy and paneer unit', stage: 'idea', yearsRunning: 0 },
+      hasBusinessPlan: true,
+      projectCostPaise: R(4_00_000),
+      ownContributionPaise: R(40_000),
+      requestedLoanPaise: R(3_60_000),
     },
   },
   {

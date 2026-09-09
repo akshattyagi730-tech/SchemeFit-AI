@@ -21,6 +21,7 @@ export const updateProfileSchema = z
     age: z.number().int().min(16).max(100).nullable().optional(),
     annualIncomePaise: nullablePaise.optional(),
     category: z.enum(SOCIAL_CATEGORIES).nullable().optional(),
+    obcCreamyLayer: z.boolean().nullable().optional(),
     state: placeName,
     district: placeName,
     areaType: z.enum(AREA_TYPES).nullable().optional(),

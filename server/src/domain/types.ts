@@ -109,6 +109,8 @@ export interface ApplicantFacts {
   age?: number | null;
   annualIncomePaise?: number | null;
   category?: SocialCategory | null;
+  /** Only meaningful when category === 'OBC'. true = Creamy Layer (treated as General). */
+  obcCreamyLayer?: boolean | null;
   state?: string | null;
   district?: string | null;
   areaType?: AreaType | null;

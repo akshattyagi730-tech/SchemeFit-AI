@@ -274,6 +274,7 @@ async function freezeSnapshots(req: Request, app: ApplicationDoc, scheme: Scheme
     age: profile.age,
     annualIncomePaise: profile.annualIncomePaise,
     category: profile.category,
+    obcCreamyLayer: profile.obcCreamyLayer,
     state: profile.state,
     district: profile.district,
     areaType: profile.areaType,

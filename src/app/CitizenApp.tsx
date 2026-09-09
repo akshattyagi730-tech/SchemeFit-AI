@@ -1,10 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
-import { Bell, ChevronDown, Globe2, Menu, Search, X, Check } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Bell, Check, ClipboardList, LogOut, Menu, Search, UserRound, X } from 'lucide-react';
 import { Logo } from '../components/ui';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { AshokaEmblem } from '../components/AshokaEmblem';
-import { navFor } from './nav';
-import { useLogout, useMe, useNotifications, useMarkNotificationsRead } from '../api/hooks';
+import { navFor, type NavItem } from './nav';
+import {
+  useLogout,
+  useMe,
+  useNotifications,
+  useMarkNotificationsRead,
+  useSchemes,
+} from '../api/hooks';
+import { useToast } from './toast';
 import { formatDate, relativeParts } from '../lib/format';
 import { useLang, LANGS } from '../i18n';
 import { Dashboard } from '../screens/Dashboard';
@@ -33,40 +40,112 @@ function useRoutePath() {
   return { path, navigate };
 }
 
-function LangSwitch() {
-  const { lang, setLang } = useLang();
+/** Close `onOutside` when a pointer / Escape lands outside `ref`. */
+function useDismiss(ref: React.RefObject<HTMLElement | null>, onOutside: () => void) {
+  useEffect(() => {
+    const pointer = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onOutside();
+    };
+    const key = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onOutside();
+    };
+    addEventListener('mousedown', pointer);
+    addEventListener('keydown', key);
+    return () => {
+      removeEventListener('mousedown', pointer);
+      removeEventListener('keydown', key);
+    };
+  }, [ref, onOutside]);
+}
+
+const initialsOf = (name: string) =>
+  name
+    .split(' ')
+    .map((w) => w[0])
+    .filter(Boolean)
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
+/** Header search: matches navigation pages and scheme names, click to open. */
+function SearchBox({ navigate, items }: { navigate: (to: string) => void; items: NavItem[] }) {
+  const { t } = useLang();
+  const { data: schemes } = useSchemes();
+  const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const h = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    addEventListener('mousedown', h);
-    return () => removeEventListener('mousedown', h);
-  }, []);
-  const current = LANGS.find((l) => l.code === lang)!;
+  useDismiss(ref, () => setOpen(false));
+
+  const canOpenSchemes = items.some((i) => i.route === '/schemes');
+  const query = q.trim().toLowerCase();
+  const { pages, matchedSchemes } = useMemo(() => {
+    if (!query) return { pages: [] as NavItem[], matchedSchemes: [] as NonNullable<typeof schemes> };
+    const pages = items.filter((i) => t(i.labelKey).toLowerCase().includes(query));
+    const matchedSchemes = canOpenSchemes
+      ? (schemes ?? [])
+          .filter(
+            (s) =>
+              s.name.toLowerCase().includes(query) ||
+              s.provider.toLowerCase().includes(query) ||
+              s.displayCategory.toLowerCase().includes(query),
+          )
+          .slice(0, 6)
+      : [];
+    return { pages, matchedSchemes };
+  }, [query, items, schemes, t, canOpenSchemes]);
+
+  const go = (to: string) => {
+    setQ('');
+    setOpen(false);
+    navigate(to);
+  };
+
+  const total = pages.length + matchedSchemes.length;
+
   return (
-    <div className="lang-switch" ref={ref}>
-      <button className="lang-btn" onClick={() => setOpen((o) => !o)} aria-label="Language">
-        <Globe2 size={17} />
-        <b>{lang === 'hi' ? 'हिं' : 'EN'}</b>
-        <ChevronDown size={14} />
-      </button>
-      {open && (
-        <div className="lang-menu">
-          {LANGS.map((l) => (
-            <button
-              key={l.code}
-              className={l.code === lang ? 'active' : ''}
-              onClick={() => {
-                setLang(l.code);
-                setOpen(false);
-              }}
-            >
-              {l.code === current.code ? <Check size={13} /> : <span style={{ width: 13 }} />}
-              {l.native}
-            </button>
-          ))}
+    <div className="search-box" ref={ref}>
+      <Search size={20} />
+      <input
+        value={q}
+        onChange={(e) => {
+          setQ(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        placeholder={t('header.searchPlaceholder')}
+        aria-label={t('header.searchPlaceholder')}
+      />
+      {open && query.length > 0 && (
+        <div className="search-results">
+          {total === 0 && <div className="search-empty">{t('header.searchEmpty', { q: q.trim() })}</div>}
+          {pages.length > 0 && (
+            <div className="search-group">
+              <small>{t('header.searchPagesGroup')}</small>
+              {pages.map((i) => {
+                const Icon = i.icon;
+                return (
+                  <button key={i.route} onClick={() => go(i.route)}>
+                    <Icon size={15} />
+                    <span>{t(i.labelKey)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {matchedSchemes.length > 0 && (
+            <div className="search-group">
+              <small>{t('header.searchSchemesGroup')}</small>
+              {matchedSchemes.map((s) => (
+                <button key={s.id} onClick={() => go('/schemes')}>
+                  <ClipboardList size={15} />
+                  <span>
+                    {s.name}
+                    <em>{s.provider}</em>
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -75,10 +154,12 @@ function LangSwitch() {
 
 function NotificationsBell() {
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
   const { data } = useNotifications();
   const markRead = useMarkNotificationsRead();
   const { t } = useLang();
   const unread = data?.meta?.unread ?? 0;
+  useDismiss(ref, () => setOpen(false));
 
   const rel = (iso: string) => {
     const { unit, n } = relativeParts(iso);
@@ -90,9 +171,11 @@ function NotificationsBell() {
   };
 
   return (
-    <div className="bell" style={{ position: 'relative' }} onClick={() => setOpen((o) => !o)}>
-      <Bell />
-      {unread > 0 && <i />}
+    <div className="bell" ref={ref} style={{ position: 'relative' }}>
+      <button className="bell-btn" onClick={() => setOpen((o) => !o)} aria-label={t('notif.title')}>
+        <Bell />
+        {unread > 0 && <i />}
+      </button>
       {open && (
         <div className="notif-panel" onClick={(e) => e.stopPropagation()}>
           <h4>
@@ -113,10 +196,96 @@ function NotificationsBell() {
   );
 }
 
+/** Avatar button → menu with profile, language and sign out. Reachable on every viewport. */
+function AccountMenu({
+  user,
+  navigate,
+  onSignOut,
+}: {
+  user: AuthUser;
+  navigate: (to: string) => void;
+  onSignOut: () => void;
+}) {
+  const { lang, setLang, t } = useLang();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useDismiss(ref, () => setOpen(false));
+
+  const isAdmin = user.role === 'ADMIN';
+  const initials = initialsOf(user.displayName);
+
+  return (
+    <div className="account-menu" ref={ref}>
+      <button
+        className="avatar"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        aria-label={t('header.account')}
+      >
+        {initials}
+      </button>
+      {open && (
+        <div className="account-pop" role="menu">
+          <div className="account-id">
+            <span className="avatar sm">{initials}</span>
+            <div>
+              <b>{user.displayName}</b>
+              <small>{isAdmin ? t('header.administrator') : t('header.applicant')}</small>
+            </div>
+          </div>
+
+          {!isAdmin && (
+            <button
+              role="menuitem"
+              onClick={() => {
+                setOpen(false);
+                navigate('/profile');
+              }}
+            >
+              <UserRound size={15} />
+              <span>{t('header.myProfile')}</span>
+            </button>
+          )}
+
+          <div className="account-sep" />
+          <div className="account-heading">{t('header.language')}</div>
+          {LANGS.map((l) => (
+            <button
+              key={l.code}
+              role="menuitemradio"
+              aria-checked={l.code === lang}
+              className={l.code === lang ? 'active' : ''}
+              onClick={() => setLang(l.code)}
+            >
+              {l.code === lang ? <Check size={15} /> : <span style={{ width: 15 }} />}
+              <span>{l.native}</span>
+            </button>
+          ))}
+
+          <div className="account-sep" />
+          <button
+            role="menuitem"
+            className="danger"
+            onClick={() => {
+              setOpen(false);
+              onSignOut();
+            }}
+          >
+            <LogOut size={15} />
+            <span>{t('header.signOut')}</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function CitizenApp({ user }: { user: AuthUser }) {
   const { path, navigate } = useRoutePath();
   const [sideOpen, setSideOpen] = useState(false);
   const logout = useLogout();
+  const { toast } = useToast();
   const { data: me } = useMe();
   const { t, lang } = useLang();
   const items = navFor(user.role);
@@ -125,6 +294,18 @@ export function CitizenApp({ user }: { user: AuthUser }) {
     if (path !== '/' && !items.some((i) => i.route === path)) navigate(items[0]?.route ?? '/');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path]);
+
+  const signOut = () => {
+    if (logout.isPending) return;
+    if (!window.confirm(t('header.signOutConfirm'))) return;
+    logout.mutate(undefined, {
+      onSettled: () => {
+        toast(t('header.signedOut'));
+        // Hard navigation guarantees a clean, unauthenticated app state.
+        setTimeout(() => window.location.assign('/'), 600);
+      },
+    });
+  };
 
   const screen = (() => {
     switch (path) {
@@ -206,7 +387,7 @@ export function CitizenApp({ user }: { user: AuthUser }) {
 
       <main>
         <header className="header">
-          <button className="mobile-menu" onClick={() => setSideOpen(true)}>
+          <button className="mobile-menu" onClick={() => setSideOpen(true)} aria-label={t('header.menu')}>
             <Menu />
           </button>
           <div className="mission">
@@ -214,30 +395,11 @@ export function CitizenApp({ user }: { user: AuthUser }) {
             <i />
             <small>{t('brand.missionSub')}</small>
           </div>
-          <div className="search">
-            <Search size={22} />
-            <span>{t('header.search')}</span>
-          </div>
+          <SearchBox navigate={navigate} items={items} />
           <div className="head-actions">
-            <LangSwitch />
-            <span className="divider" />
             <NotificationsBell />
             <span className="divider" />
-            <span className="avatar">
-              {user.displayName
-                .split(' ')
-                .map((w) => w[0])
-                .join('')
-                .slice(0, 2)
-                .toUpperCase()}
-            </span>
-            <div className="profile-label">
-              <b>{user.displayName}</b>
-              <small>{user.role === 'ADMIN' ? t('header.administrator') : t('header.applicant')}</small>
-            </div>
-            <button className="workspace-switch" onClick={() => logout.mutate()}>
-              {t('header.signOut')}
-            </button>
+            <AccountMenu user={user} navigate={navigate} onSignOut={signOut} />
           </div>
         </header>
 

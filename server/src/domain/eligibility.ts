@@ -66,10 +66,19 @@ export function evaluateEligibility(
   if (e.categories && e.categories.length > 0) {
     if (facts.category == null) {
       c.push({ key: 'social_category', label: 'Social category', outcome: 'unknown', detail: 'Add your social category to your profile so this rule can be checked.' });
-    } else if (e.categories.includes(facts.category)) {
-      c.push({ key: 'social_category', label: 'Social category', outcome: 'passed', detail: `This scheme is open to the ${facts.category} category.` });
-    } else {
+    } else if (!e.categories.includes(facts.category)) {
       c.push({ key: 'social_category', label: 'Social category', outcome: 'failed', detail: `This scheme is limited to ${e.categories.join(', ')}. Your profile records ${facts.category}.` });
+    } else if (facts.category === 'OBC' && e.categories.includes('OBC')) {
+      // Concessional OBC schemes (NBCFDC etc.) are limited to the Non-Creamy Layer.
+      if (facts.obcCreamyLayer == null) {
+        c.push({ key: 'social_category', label: 'Social category', outcome: 'unknown', detail: 'This OBC scheme is limited to the Non-Creamy Layer. Confirm your OBC creamy-layer status in your profile.' });
+      } else if (facts.obcCreamyLayer) {
+        c.push({ key: 'social_category', label: 'Social category', outcome: 'failed', detail: 'This scheme is limited to the OBC Non-Creamy Layer. Your profile records OBC Creamy Layer (treated as General for these schemes).' });
+      } else {
+        c.push({ key: 'social_category', label: 'Social category', outcome: 'passed', detail: 'This scheme is open to the OBC Non-Creamy Layer.' });
+      }
+    } else {
+      c.push({ key: 'social_category', label: 'Social category', outcome: 'passed', detail: `This scheme is open to the ${facts.category} category.` });
     }
   }
 

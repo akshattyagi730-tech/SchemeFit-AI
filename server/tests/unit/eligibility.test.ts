@@ -77,6 +77,39 @@ describe('eligibility rule engine', () => {
     expect(pmmyResult.status).toBe('eligible'); // not category-gated
   });
 
+  describe('OBC creamy-layer distinction on reserved-category schemes', () => {
+    const nbcfdc: SchemeRuleSet = {
+      supportedPurposes: ['business_new', 'business_expansion'],
+      eligibility: { categories: ['OBC'], minAge: 18, maxAge: 55, maxAnnualIncomePaise: L(300_000), requiresBusinessPlan: true },
+      financing: { minAmountPaise: L(50_000), maxAmountPaise: L(1_500_000), maxProjectCostSharePct: 90, minOwnContributionPct: 10 },
+    };
+    const obcFacts: ApplicantFacts = { ...scFacts, category: 'OBC', purpose: 'business_new' };
+
+    it('is eligible for an OBC Non-Creamy Layer applicant', () => {
+      const r = evaluateEligibility(nbcfdc, { ...obcFacts, obcCreamyLayer: false }, financing);
+      expect(r.status).toBe('eligible');
+      expect(r.passed.map((c) => c.key)).toContain('social_category');
+    });
+
+    it('is ineligible for an OBC Creamy Layer applicant (treated as General)', () => {
+      const r = evaluateEligibility(nbcfdc, { ...obcFacts, obcCreamyLayer: true }, financing);
+      expect(r.status).toBe('ineligible');
+      const detail = r.failed.find((c) => c.key === 'social_category')!.detail;
+      expect(detail).toMatch(/Non-Creamy Layer/i);
+    });
+
+    it('needs_information when OBC creamy-layer status is not recorded', () => {
+      const r = evaluateEligibility(nbcfdc, { ...obcFacts, obcCreamyLayer: null }, financing);
+      expect(r.status).toBe('needs_information');
+      expect(r.unknown.map((c) => c.key)).toContain('social_category');
+    });
+
+    it('ignores creamy-layer status on schemes with no category restriction', () => {
+      const r = evaluateEligibility(pmmy, { ...obcFacts, obcCreamyLayer: true }, financing);
+      expect(r.conditions.map((c) => c.key)).not.toContain('social_category');
+    });
+  });
+
   it('flags an unplanned funding gap as a non-blocking advisory, not a failure', () => {
     const r = evaluateEligibility(pmmy, scFacts, { projectCostPaise: L(600_000), ownContributionPaise: L(60_000), requestedLoanPaise: L(400_000) });
     // gap = 600000 - 60000 - 400000 = 140000
