@@ -1,11 +1,13 @@
 import { useState } from 'react';
-import { ArrowRight, CheckCircle2, Landmark, LockKeyhole, ShieldCheck, UserRound } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Landmark, LockKeyhole, ShieldCheck, UserRound, Globe2 } from 'lucide-react';
 import '../components/login-screen.css';
 import { ApiError } from '../api/client';
 import { useLogin, useRegister } from '../api/hooks';
+import { useLang, LANGS } from '../i18n';
 import type { Workspace } from '../api/types';
 
 export function AuthScreen({ onWorkspace }: { onWorkspace: (w: Workspace) => void }) {
+  const { t, lang, setLang } = useLang();
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
@@ -32,7 +34,7 @@ export function AuthScreen({ onWorkspace }: { onWorkspace: (w: Workspace) => voi
       } else {
         await login.mutateAsync({ email, password });
       }
-      onWorkspace(workspace!); // parent re-checks role from /auth/me
+      onWorkspace(workspace!);
     } catch (err) {
       if (err instanceof ApiError) {
         if (err.fieldErrors.length) {
@@ -40,7 +42,7 @@ export function AuthScreen({ onWorkspace }: { onWorkspace: (w: Workspace) => voi
         }
         setFormError(err.message);
       } else {
-        setFormError('Unexpected error. Please try again.');
+        setFormError(t('auth.unexpectedError'));
       }
     }
   }
@@ -55,50 +57,68 @@ export function AuthScreen({ onWorkspace }: { onWorkspace: (w: Workspace) => voi
           </b>
         </div>
         <div className="login-brand-copy">
-          <span>Building an Inclusive India</span>
-          <h1>Opportunity reaches the right entrepreneur.</h1>
-          <p>One connected workspace for citizens, banks and channel partners.</p>
+          <span>{t('brand.mission')}</span>
+          <h1>{t('auth.headline')}</h1>
+          <p>{t('auth.subhead')}</p>
         </div>
         <div className="login-points">
           <p>
-            <CheckCircle2 /> Scheme-fit recommendations
+            <CheckCircle2 /> {t('auth.point1')}
           </p>
           <p>
-            <CheckCircle2 /> Document readiness checks
+            <CheckCircle2 /> {t('auth.point2')}
           </p>
           <p>
-            <CheckCircle2 /> Smarter partner routing
+            <CheckCircle2 /> {t('auth.point3')}
           </p>
         </div>
-        <small>Prototype · Not an official government service · Data is illustrative</small>
+        <div className="login-lang">
+          <Globe2 size={14} />
+          {LANGS.map((l) => (
+            <button key={l.code} className={l.code === lang ? 'active' : ''} onClick={() => setLang(l.code)}>
+              {l.native}
+            </button>
+          ))}
+        </div>
+        <small>{t('disc.short')}</small>
       </section>
 
       <section className="login-panel">
         {!workspace ? (
           <>
             <div>
-              <span className="eyebrow">WELCOME TO SCHEMEFIT AI</span>
-              <h2>Choose your workspace</h2>
-              <p>Selecting a workspace only sets where you land — it never grants a role. Your access is decided by your account.</p>
+              <span className="eyebrow">{t('auth.welcome')}</span>
+              <h2>{t('auth.chooseWorkspace')}</h2>
+              <p>{t('auth.chooseHint')}</p>
             </div>
             <div className="role-cards">
-              <button onClick={() => { setWorkspace('citizen'); setMode('login'); }}>
+              <button
+                onClick={() => {
+                  setWorkspace('citizen');
+                  setMode('login');
+                }}
+              >
                 <span className="role-icon citizen">
                   <UserRound />
                 </span>
                 <div>
-                  <b>Citizen / Entrepreneur</b>
-                  <small>Find schemes, prepare documents and track your application.</small>
+                  <b>{t('auth.citizenCard')}</b>
+                  <small>{t('auth.citizenCardSub')}</small>
                 </div>
                 <ArrowRight />
               </button>
-              <button onClick={() => { setWorkspace('partner'); setMode('login'); }}>
+              <button
+                onClick={() => {
+                  setWorkspace('partner');
+                  setMode('login');
+                }}
+              >
                 <span className="role-icon partner">
                   <Landmark />
                 </span>
                 <div>
-                  <b>Bank / Channel Partner</b>
-                  <small>Review only applications assigned to your organisation.</small>
+                  <b>{t('auth.partnerCard')}</b>
+                  <small>{t('auth.partnerCardSub')}</small>
                 </div>
                 <ArrowRight />
               </button>
@@ -106,50 +126,44 @@ export function AuthScreen({ onWorkspace }: { onWorkspace: (w: Workspace) => voi
             <div className="login-security">
               <ShieldCheck />
               <span>
-                <b>Role-based access</b>
-                Applicant details are visible only to the assigned bank or partner.
+                <b>{t('auth.rbac')}</b>
+                {t('auth.rbacSub')}
               </span>
             </div>
           </>
         ) : (
           <>
-            <button className="auth-back" onClick={() => { setWorkspace(null); reset(); }}>
-              ← Back to workspace choice
+            <button
+              className="auth-back"
+              onClick={() => {
+                setWorkspace(null);
+                reset();
+              }}
+            >
+              {t('auth.backToChoice')}
             </button>
             <div>
-              <span className="eyebrow">
-                {workspace === 'citizen' ? 'CITIZEN / ENTREPRENEUR' : 'BANK / CHANNEL PARTNER'} WORKSPACE
-              </span>
-              <h2>{mode === 'register' ? 'Create your citizen account' : 'Sign in'}</h2>
-              <p>
-                {workspace === 'partner'
-                  ? 'Partner and admin accounts are provisioned by an administrator. Sign in with the credentials you were given.'
-                  : 'Use your email and password. New here? Create a free citizen account.'}
-              </p>
+              <span className="eyebrow">{workspace === 'citizen' ? t('auth.citizenWs') : t('auth.partnerWs')}</span>
+              <h2>{mode === 'register' ? t('auth.createAccount') : t('auth.signIn')}</h2>
+              <p>{workspace === 'partner' ? t('auth.partnerHint') : t('auth.citizenHint')}</p>
             </div>
 
             <form className="auth-form" onSubmit={submit}>
               {formError && <div className="form-error">{formError}</div>}
               {mode === 'register' && (
                 <label>
-                  Full name
+                  {t('auth.fullName')}
                   <input value={fullName} onChange={(e) => setFullName(e.target.value)} required autoComplete="name" />
                   {fieldErrors.fullName && <span className="field-error">{fieldErrors.fullName}</span>}
                 </label>
               )}
               <label>
-                Email
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  autoComplete="email"
-                />
+                {t('auth.email')}
+                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
                 {fieldErrors.email && <span className="field-error">{fieldErrors.email}</span>}
               </label>
               <label>
-                Password
+                {t('auth.password')}
                 <input
                   type="password"
                   value={password}
@@ -158,24 +172,30 @@ export function AuthScreen({ onWorkspace }: { onWorkspace: (w: Workspace) => voi
                   autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
                 />
                 {fieldErrors.password && <span className="field-error">{fieldErrors.password}</span>}
-                {mode === 'register' && <span className="inline-note">At least 10 characters, with letters and numbers.</span>}
+                {mode === 'register' && <span className="inline-note">{t('auth.passwordHint')}</span>}
               </label>
               <button className="button primary" type="submit" disabled={busy}>
-                {busy ? 'Please wait…' : mode === 'register' ? 'Create account' : 'Sign in'}
+                {busy ? t('common.pleaseWait') : mode === 'register' ? t('auth.createBtn') : t('auth.signIn')}
                 <ArrowRight size={18} />
               </button>
             </form>
 
             {workspace === 'citizen' && (
               <p className="inline-note">
-                {mode === 'register' ? 'Already have an account?' : 'Need an account?'}{' '}
-                <button className="auth-switch" onClick={() => { setMode(mode === 'register' ? 'login' : 'register'); reset(); }}>
-                  {mode === 'register' ? 'Sign in' : 'Create one'}
+                {mode === 'register' ? t('auth.haveAccount') : t('auth.needAccount')}{' '}
+                <button
+                  className="auth-switch"
+                  onClick={() => {
+                    setMode(mode === 'register' ? 'login' : 'register');
+                    reset();
+                  }}
+                >
+                  {mode === 'register' ? t('auth.signIn') : t('auth.createOne')}
                 </button>
               </p>
             )}
             <small className="login-foot">
-              <LockKeyhole /> Passwords are hashed with Argon2id. Sessions are server-side and never stored in the browser.
+              <LockKeyhole /> {t('auth.securityNote')}
             </small>
           </>
         )}

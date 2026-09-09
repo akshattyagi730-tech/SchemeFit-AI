@@ -4,27 +4,28 @@ import { Button, ScoreRing, Loading, ErrorState, EmptyState, DemoBadge } from '.
 import { useRecommendations, useApplication, useDocuments, useRouting } from '../api/hooks';
 import { useActiveApplication } from '../app/active-application';
 import { useMe } from '../api/hooks';
-import { formatPaise, bpsToPct, STATUS_LABELS } from '../lib/format';
+import { useLang, useLabels } from '../i18n';
+import { formatPaise, bpsToPct } from '../lib/format';
 
 export function Dashboard({ navigate }: { navigate: (to: string) => void }) {
   const { data: me } = useMe();
-  const { active, activeId, applications } = useActiveApplication();
+  const { t, lang } = useLang();
+  const L = useLabels();
+  const { activeId } = useActiveApplication();
   const { data: recs, isLoading, isError, refetch } = useRecommendations(me?.user.role === 'CITIZEN');
   const { data: application } = useApplication(activeId ?? undefined);
   const { data: docs } = useDocuments(activeId ?? undefined);
   const { data: routing } = useRouting(application?.schemeCode);
 
-  const firstName = (me?.user.displayName ?? 'there').split(' ')[0];
+  const firstName = (me?.user.displayName ?? '').split(' ')[0];
 
   if (me?.user.role === 'ADMIN') {
     return (
       <>
         <section className="welcome">
           <div>
-            <h1>
-              Welcome, <span>{firstName}</span>
-            </h1>
-            <p>Administrator workspace. Open the Admin Dashboard for statewide KPIs, or Applications to assign and review.</p>
+            <h1>{t('dash.adminWelcome', { name: firstName })}</h1>
+            <p>{t('dash.adminSub')}</p>
           </div>
         </section>
         <section className="stats">
@@ -34,8 +35,8 @@ export function Dashboard({ navigate }: { navigate: (to: string) => void }) {
             </div>
             <div>
               <b>KPIs</b>
-              <strong>Admin Dashboard</strong>
-              <small>Database-derived</small>
+              <strong>{t('dash.adminKpisTitle')}</strong>
+              <small>{t('dash.adminKpisSub')}</small>
             </div>
           </button>
           <button className="stat" onClick={() => navigate('/applications')}>
@@ -44,8 +45,8 @@ export function Dashboard({ navigate }: { navigate: (to: string) => void }) {
             </div>
             <div>
               <b>Queue</b>
-              <strong>Applications</strong>
-              <small>Assign &amp; review</small>
+              <strong>{t('dash.adminQueue')}</strong>
+              <small>{t('dash.adminQueueSub')}</small>
             </div>
           </button>
         </section>
@@ -53,12 +54,11 @@ export function Dashboard({ navigate }: { navigate: (to: string) => void }) {
     );
   }
 
-  if (isLoading) return <Loading label="Loading your dashboard…" />;
+  if (isLoading) return <Loading label={t('common.loading')} />;
   if (isError) return <ErrorState error={undefined} onRetry={refetch} />;
 
   const topRec = recs?.eligible[0];
   const readiness = docs?.readiness;
-
   const needsSetup = recs && !recs.profileComplete;
 
   return (
@@ -69,33 +69,41 @@ export function Dashboard({ navigate }: { navigate: (to: string) => void }) {
             <Compass />
           </span>
           <div>
-            <b>Let’s find the schemes and loans for you</b>
-            <span>Answer a few questions — what you need, who you are, the amounts — and we’ll match every scheme and list the documents.</span>
+            <b>{t('dash.ctaTitle')}</b>
+            <span>{t('dash.ctaSub')}</span>
           </div>
-          <Button onClick={() => navigate('/start')}>Get started</Button>
+          <Button onClick={() => navigate('/start')}>{t('dash.ctaBtn')}</Button>
         </div>
       )}
 
       <section className="welcome">
         <div>
           <h1>
-            Good day, <span>{firstName}</span> <span className="wave">👋</span>
+            {t('dash.goodDay', { name: firstName })} <span className="wave">👋</span>
           </h1>
-          <p>Here are your scheme matches and next steps for your entrepreneurial journey.</p>
+          <p>{t('dash.welcomeSub')}</p>
         </div>
         <MadeInIndiaMark />
         <div className="india-quote">
           <b>
-            Inclusive Entrepreneurs
-            <br />
-            Stronger India
+            {lang === 'hi' ? (
+              <>
+                समावेशी उद्यमी
+                <br />
+                सशक्त भारत
+              </>
+            ) : (
+              <>
+                Inclusive Entrepreneurs
+                <br />
+                Stronger India
+              </>
+            )}
           </b>
           <i />
           <span>
-            “Small dreams
-            <br />
-            build a big India.”
-            <small>— NITI Aayog (illustrative)</small>
+            {lang === 'hi' ? '“छोटे सपने बड़ा भारत बनाते हैं।”' : '“Small dreams build a big India.”'}
+            <small>{lang === 'hi' ? '— नीति आयोग (उदाहरण)' : '— NITI Aayog (illustrative)'}</small>
           </span>
         </div>
       </section>
@@ -107,8 +115,8 @@ export function Dashboard({ navigate }: { navigate: (to: string) => void }) {
           </div>
           <div>
             <b>{recs?.counts.eligible ?? 0}</b>
-            <strong>Eligible schemes</strong>
-            <small>{recs?.counts.needsInformation ?? 0} need more info</small>
+            <strong>{t('dash.eligibleSchemes')}</strong>
+            <small>{t('dash.needMoreInfo', { n: recs?.counts.needsInformation ?? 0 })}</small>
           </div>
         </button>
         <button className="stat" onClick={() => navigate('/documents')}>
@@ -117,8 +125,8 @@ export function Dashboard({ navigate }: { navigate: (to: string) => void }) {
           </div>
           <div>
             <b>{readiness ? `${readiness.requiredVerified}/${readiness.requiredTotal}` : '—'}</b>
-            <strong>Documents verified</strong>
-            <small>{readiness ? `${readiness.requiredSubmitted} submitted` : 'No application yet'}</small>
+            <strong>{t('dash.documentsVerified')}</strong>
+            <small>{readiness ? t('dash.submittedN', { n: readiness.requiredSubmitted }) : t('dash.noApplicationYet')}</small>
           </div>
         </button>
         <button className="stat" onClick={() => navigate('/partners')}>
@@ -127,18 +135,16 @@ export function Dashboard({ navigate }: { navigate: (to: string) => void }) {
           </div>
           <div>
             <b>{routing?.routing.matched ? 1 : 0}</b>
-            <strong>Partner recommended</strong>
-            <small>{routing?.routing.recommended?.name ?? 'Run partner routing'}</small>
+            <strong>{t('dash.partnerRecommended')}</strong>
+            <small>{routing?.routing.recommended?.name ?? t('dash.runPartnerRouting')}</small>
           </div>
         </button>
         <div className="quote">
           <b>“</b>
           <span>
-            “Your potential matters.
-            <br />
-            The right support can
-            <br />
-            take you further.”
+            {lang === 'hi'
+              ? '“आपकी संभावनाएँ मायने रखती हैं। सही सहयोग आपको और आगे ले जा सकता है।”'
+              : '“Your potential matters. The right support can take you further.”'}
           </span>
           <i />
         </div>
@@ -147,10 +153,10 @@ export function Dashboard({ navigate }: { navigate: (to: string) => void }) {
       <section className="grid-main">
         <article className="card scheme-hero">
           <div className="card-head">
-            <h2>Your best scheme match</h2>
+            <h2>{t('dash.bestMatch')}</h2>
             <span className="ai">
               <Sparkles size={14} />
-              Rule-engine ranked
+              {t('dash.ruleRanked')}
             </span>
           </div>
           {topRec ? (
@@ -169,34 +175,33 @@ export function Dashboard({ navigate }: { navigate: (to: string) => void }) {
                 <div className="check-box">
                   {topRec.eligibility.passed.slice(0, 4).map((k) => (
                     <div key={k}>
-                      <CheckCircle2 /> {k.replace(/_/g, ' ')} check passed
+                      <CheckCircle2 /> {k.replace(/_/g, ' ')}
                     </div>
                   ))}
                   <div className="tags">
-                    <span>Financing {formatPaise(topRec.scheme.financing.maxAmountPaise)}</span>
-                    <span>{bpsToPct(topRec.scheme.terms.minInterestRateBps)}+ interest</span>
+                    <span>
+                      {t('sm.financing')} {formatPaise(topRec.scheme.financing.maxAmountPaise)}
+                    </span>
+                    <span>{bpsToPct(topRec.scheme.terms.minInterestRateBps)}+</span>
                   </div>
                 </div>
               </div>
               <div className="scheme-score">
                 <ScoreRing score={topRec.suitability?.score ?? 0} />
-                <span>{topRec.suitability?.score ?? 0}/100 suitability</span>
-                <Button onClick={() => navigate('/schemes')}>View all matches</Button>
+                <span>{t('dash.suitability', { n: topRec.suitability?.score ?? 0 })}</span>
+                <Button onClick={() => navigate('/schemes')}>{t('dash.viewAllMatches')}</Button>
               </div>
             </div>
           ) : (
-            <EmptyState
-              title="No eligible scheme yet"
-              hint="Complete your profile so the rule engine can evaluate and rank schemes."
-            />
+            <EmptyState title={t('dash.noEligibleYet')} hint={t('dash.noEligibleHint')} />
           )}
         </article>
 
         <article className="card readiness">
           <div className="card-head">
-            <h2>Application readiness</h2>
+            <h2>{t('dash.appReadiness')}</h2>
             <button onClick={() => navigate('/documents')}>
-              View all documents <ArrowRight size={16} />
+              {t('dash.viewAllDocuments')} <ArrowRight size={16} />
             </button>
           </div>
           {application ? (
@@ -211,7 +216,7 @@ export function Dashboard({ navigate }: { navigate: (to: string) => void }) {
                       </span>
                       <span>{l.label}</span>
                       <span className={`status ${l.state === 'verified' ? 'verified' : l.state === 'missing' ? 'missing' : 'pending'}`}>
-                        {l.state.replace('_', ' ')}
+                        {L.docState(l.state)}
                       </span>
                     </div>
                   ))}
@@ -222,23 +227,20 @@ export function Dashboard({ navigate }: { navigate: (to: string) => void }) {
                 <div>
                   <b>
                     {application.status === 'CHANGES_REQUESTED'
-                      ? 'The reviewer requested changes'
+                      ? t('dash.reviewerRequestedChanges')
                       : readiness && readiness.requiredVerified < readiness.requiredTotal
-                        ? `${readiness.requiredTotal - readiness.requiredVerified} document(s) still to verify`
-                        : 'Documents are progressing'}
+                        ? t('dash.docsToVerify', { n: readiness.requiredTotal - readiness.requiredVerified })
+                        : t('dash.docsProgressing')}
                   </b>
-                  <span>{application.lastReviewNote || `Application ${application.reference} · ${STATUS_LABELS[application.status]}`}</span>
+                  <span>{application.lastReviewNote || `${application.reference} · ${L.status(application.status)}`}</span>
                 </div>
                 <Button variant="outline" onClick={() => navigate('/documents')}>
-                  Review documents
+                  {t('dash.reviewDocuments')}
                 </Button>
               </div>
             </>
           ) : (
-            <EmptyState
-              title="No application started"
-              hint="Pick a scheme from your matches to begin — required documents come from that scheme."
-            />
+            <EmptyState title={t('dash.noApplicationStarted')} hint={t('dash.noApplicationHint')} />
           )}
         </article>
       </section>
@@ -249,26 +251,28 @@ export function Dashboard({ navigate }: { navigate: (to: string) => void }) {
             <div className="title-icon">
               <IndianRupee />
               <div>
-                <h2>Loan planner</h2>
-                <p>Open the planner to model EMI, tenure and moratorium for your application.</p>
+                <h2>{t('dash.loanPlanner')}</h2>
+                <p>{t('dash.loanPlannerSub')}</p>
               </div>
             </div>
           </div>
           <div className="loan-numbers">
             <div>
               <b>{formatPaise(application?.financing.requestedLoanPaise)}</b>
-              <span>Requested loan</span>
+              <span>{t('dash.requestedLoan')}</span>
             </div>
             <div>
-              <b>{application?.financing.tenureMonths ?? '—'} mo</b>
-              <span>Tenure</span>
+              <b>
+                {application?.financing.tenureMonths ?? '—'} {t('common.mo')}
+              </b>
+              <span>{t('dash.tenure')}</span>
             </div>
             <div>
               <b>{application?.financePlanSnapshot ? formatPaise(application.financePlanSnapshot.monthlyInstalmentPaise) : '—'}</b>
-              <span>EMI (last saved)</span>
+              <span>{t('dash.emiLastSaved')}</span>
             </div>
             <button onClick={() => navigate('/loan-planner')}>
-              Open detailed planner <ArrowRight size={15} />
+              {t('dash.openDetailedPlanner')} <ArrowRight size={15} />
             </button>
           </div>
         </article>
@@ -277,10 +281,10 @@ export function Dashboard({ navigate }: { navigate: (to: string) => void }) {
           <div className="card-head">
             <div className="title-icon">
               <UsersRound />
-              <h2>Best channel partner</h2>
+              <h2>{t('dash.bestChannelPartner')}</h2>
             </div>
             <button onClick={() => navigate('/partners')}>
-              View routing <ArrowRight size={16} />
+              {t('dash.viewRouting')} <ArrowRight size={16} />
             </button>
           </div>
           <div className="partner-info">
@@ -302,7 +306,7 @@ export function Dashboard({ navigate }: { navigate: (to: string) => void }) {
                 <p className="inline-note">{routing.routing.recommended.reason}</p>
               </>
             ) : (
-              <EmptyState title="Routing not available" hint="Start an application to run partner routing for its scheme." />
+              <EmptyState title={t('dash.routingNotAvailable')} hint={t('dash.routingHint')} />
             )}
           </div>
         </article>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FileText, Check, Clock, AlertTriangle, ChevronDown, FolderCheck } from 'lucide-react';
 import { useDocumentChecklist } from '../api/hooks';
-import { DOC_STATE_LABELS } from '../lib/format';
+import { useLang, useLabels } from '../i18n';
 import { Loading, ErrorState, EmptyState } from './ui';
 
 const STATE_ICON: Record<string, typeof Check> = {
@@ -12,25 +12,18 @@ const STATE_ICON: Record<string, typeof Check> = {
   missing: AlertTriangle,
 };
 
-/**
- * The de-duplicated union of documents needed across every scheme the citizen is
- * eligible for or that needs more information. Server-computed.
- */
 export function DocumentChecklist({ compact = false }: { compact?: boolean }) {
   const { data, isLoading, isError, error, refetch } = useDocumentChecklist();
+  const { t } = useLang();
+  const L = useLabels();
   const [expanded, setExpanded] = useState<string | null>(null);
 
-  if (isLoading) return <Loading label="Building your document checklist…" />;
+  if (isLoading) return <Loading label={t('dc.building')} />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   if (!data) return null;
 
   if (data.items.length === 0) {
-    return (
-      <EmptyState
-        title="No document checklist yet"
-        hint="Complete your profile so the rule engine can match schemes and list what they ask for."
-      />
-    );
+    return <EmptyState title={t('dc.empty')} hint={t('dc.emptyHint')} />;
   }
 
   const s = data.summary;
@@ -41,15 +34,12 @@ export function DocumentChecklist({ compact = false }: { compact?: boolean }) {
         <div className="title-icon">
           <FolderCheck />
           <div>
-            <h2>Documents you’ll need</h2>
-            <p>
-              Combined from {s.consideredSchemeCount} matched scheme{s.consideredSchemeCount === 1 ? '' : 's'} · listed once
-              even if several schemes ask for it.
-            </p>
+            <h2>{t('dc.title')}</h2>
+            <p>{t('dc.sub', { n: s.consideredSchemeCount })}</p>
           </div>
         </div>
         <span className="checklist-progress">
-          {s.mandatoryProvided}/{s.mandatoryDocuments} mandatory added · {s.mandatoryVerified} verified
+          {t('dc.progress', { provided: s.mandatoryProvided, total: s.mandatoryDocuments, verified: s.mandatoryVerified })}
         </span>
       </div>
 
@@ -57,6 +47,7 @@ export function DocumentChecklist({ compact = false }: { compact?: boolean }) {
         {data.items.map((it) => {
           const Icon = STATE_ICON[it.status] ?? Clock;
           const open = expanded === it.type;
+          const count = it.requiredByCount || it.optionalForCount;
           return (
             <div className={`checklist-row ${it.status}`} key={it.type}>
               <span className="doc-icon">
@@ -65,15 +56,10 @@ export function DocumentChecklist({ compact = false }: { compact?: boolean }) {
               <div className="checklist-main">
                 <b>
                   {it.label}
-                  {it.mandatory ? (
-                    <span className="tag req">Mandatory</span>
-                  ) : (
-                    <span className="tag opt">Optional</span>
-                  )}
+                  {it.mandatory ? <span className="tag req">{t('dc.mandatory')}</span> : <span className="tag opt">{t('dc.optional')}</span>}
                 </b>
                 <button className="auth-switch" onClick={() => setExpanded(open ? null : it.type)}>
-                  Needed by {it.requiredByCount || it.optionalForCount} scheme
-                  {(it.requiredByCount || it.optionalForCount) === 1 ? '' : 's'}
+                  {t('dc.neededBy', { n: count })}
                   <ChevronDown size={13} style={{ transform: open ? 'rotate(180deg)' : undefined }} />
                 </button>
                 {open && (
@@ -85,14 +71,14 @@ export function DocumentChecklist({ compact = false }: { compact?: boolean }) {
                     ))}
                     {it.optionalFor.map((x) => (
                       <span key={x.code} className="pill opt">
-                        {x.name} (optional)
+                        {x.name} ({t('common.optional')})
                       </span>
                     ))}
                   </div>
                 )}
               </div>
               <span className={`case-doc-status ${it.status === 'verified' ? 'ok' : it.status === 'missing' ? 'miss' : 'wait'}`}>
-                <Icon size={13} /> {DOC_STATE_LABELS[it.status]}
+                <Icon size={13} /> {L.docState(it.status)}
               </span>
             </div>
           );

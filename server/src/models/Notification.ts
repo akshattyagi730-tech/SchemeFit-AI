@@ -2,6 +2,9 @@ import { Schema, type HydratedDocument, type Model, type Types } from 'mongoose'
 import { defineModel } from './registry';
 
 export const NOTIFICATION_EVENTS = [
+  'account_welcome',
+  'recommendations_ready',
+  'application_created',
   'application_submitted',
   'application_assigned',
   'application_under_review',

@@ -3,7 +3,9 @@ import { ok } from '../../lib/http';
 import { forbidden, notFound } from '../../lib/errors';
 import { CitizenProfile, type CitizenProfileDoc } from '../../models/CitizenProfile';
 import { Application } from '../../models/Application';
+import { Notification } from '../../models/Notification';
 import { recordAudit } from '../audit/audit.service';
+import { notify } from '../notifications/notifications.service';
 import type { UpdateProfileInput } from './users.schemas';
 
 function serializeProfile(p: CitizenProfileDoc) {
@@ -65,9 +67,24 @@ export async function updateProfile(req: Request, res: Response): Promise<void> 
   const patch = req.body as UpdateProfileInput;
 
   const before = serializeProfile(profile);
+  const wasComplete = completeness(before).percent === 100;
   profile.set(patch);
   await profile.save();
   const after = serializeProfile(profile);
+
+  // First time the profile reaches 100% → let the citizen know matches are ready.
+  if (!wasComplete && completeness(after).percent === 100) {
+    const already = await Notification.exists({ recipientUserId: req.auth!.userId, event: 'recommendations_ready' });
+    if (!already) {
+      await notify({
+        recipientUserId: req.auth!.userId,
+        event: 'recommendations_ready',
+        title: 'Your scheme matches are ready',
+        message: 'Your profile is complete. Open “Scheme Matches” to see the schemes you’re eligible for, ranked, with reasons.',
+        link: '/schemes',
+      });
+    }
+  }
 
   // Submitted applications keep their own snapshots — confirm none were touched.
   const openApps = await Application.countDocuments({

@@ -6,7 +6,7 @@ import { useApplication, useDocuments, useUploadDocument } from '../api/hooks';
 import { useActiveApplication } from '../app/active-application';
 import { useToast } from '../app/toast';
 import { ApiError, downloadDocument } from '../api/client';
-import { DOC_STATE_LABELS } from '../lib/format';
+import { useLang, useLabels } from '../i18n';
 import type { DocumentInfo, ReadinessLine } from '../api/types';
 
 const STATE_ICON: Record<string, typeof Check> = {
@@ -24,19 +24,19 @@ export function Documents({ navigate }: { navigate: (to: string) => void }) {
   const { data, isLoading, isError, error, refetch } = useDocuments(activeId ?? undefined, true);
   const upload = useUploadDocument(activeId ?? '');
   const { toast, errorToast } = useToast();
+  const { t } = useLang();
+  const L = useLabels();
   const [uploadingType, setUploadingType] = useState<string | null>(null);
   const fileInputs = useRef<Record<string, HTMLInputElement | null>>({});
 
-  if (appsLoading || isLoading) return <Loading label="Loading your documents…" />;
+  if (appsLoading || isLoading) return <Loading label={t('doc.loading')} />;
   if (!activeId)
     return (
       <>
-        <PageTitle title="Documents">
-          Start an application to upload and track documents. Meanwhile, here is everything your matched schemes ask for.
-        </PageTitle>
+        <PageTitle title={t('doc.title')}>{t('doc.introNoApp')}</PageTitle>
         <DocumentChecklist />
         <div style={{ marginTop: 12 }}>
-          <Button onClick={() => navigate('/schemes')}>Go to Scheme Matches</Button>
+          <Button onClick={() => navigate('/schemes')}>{t('pr.goToSchemeMatches')}</Button>
         </div>
       </>
     );
@@ -51,10 +51,10 @@ export function Documents({ navigate }: { navigate: (to: string) => void }) {
     setUploadingType(type);
     try {
       await upload.mutateAsync({ file, type });
-      toast('Document uploaded and sent for review. It is not verified yet.');
+      toast(t('doc.uploadedToast'));
     } catch (err) {
       if (err instanceof ApiError) errorToast(err.message);
-      else errorToast('Upload failed. Nothing was saved — please retry.');
+      else errorToast(t('doc.uploadFailToast'));
     } finally {
       setUploadingType(null);
     }
@@ -69,7 +69,7 @@ export function Documents({ navigate }: { navigate: (to: string) => void }) {
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 4000);
     } catch {
-      errorToast('Could not download this document.');
+      errorToast(t('doc.downloadFailToast'));
     }
   }
 
@@ -77,31 +77,24 @@ export function Documents({ navigate }: { navigate: (to: string) => void }) {
 
   return (
     <>
-      <PageTitle title="Documents">
-        {application?.reference} · {application?.scheme?.name}. Readiness is computed on the server from this scheme’s
-        required documents.
-      </PageTitle>
+      <PageTitle title={t('doc.title')}>{t('doc.intro', { ref: application?.reference ?? '', scheme: application?.scheme?.name ?? '' })}</PageTitle>
       <div className="documents-layout">
         <article className="card document-score">
           <ScoreRing score={readiness?.verifiedPct ?? 0} label="/100" />
-          <h2>Application Readiness</h2>
+          <h2>{t('doc.readiness')}</h2>
           <p>
-            {readiness?.requiredVerified ?? 0} of {readiness?.requiredTotal ?? 0} required documents verified ·{' '}
-            {readiness?.requiredSubmitted ?? 0} submitted.
-            {readiness?.changesRequested ? ` ${readiness.changesRequested} need changes.` : ''}
+            {t('doc.readinessLine', { v: readiness?.requiredVerified ?? 0, t: readiness?.requiredTotal ?? 0, s: readiness?.requiredSubmitted ?? 0 })}
+            {readiness?.changesRequested ? ` ${t('doc.needChanges', { n: readiness.changesRequested })}` : ''}
           </p>
           <div className="ai">
-            <Sparkles size={14} /> Submitted and verified are counted separately. Optional documents don’t affect this
-            percentage.
+            <Sparkles size={14} /> {t('doc.countNote')}
           </div>
         </article>
 
         <article className="card docs-card">
           <div className="card-head">
-            <h2>Required documents</h2>
-            <small>
-              {readiness?.requiredVerified ?? 0} verified · {readiness?.requiredTotal ?? 0} required
-            </small>
+            <h2>{t('doc.required')}</h2>
+            <small>{t('doc.verifiedOfRequired', { v: readiness?.requiredVerified ?? 0, t: readiness?.requiredTotal ?? 0 })}</small>
           </div>
           {(readiness?.lines ?? []).map((line: ReadinessLine) => {
             const doc = byType.get(line.type);
@@ -115,19 +108,19 @@ export function Documents({ navigate }: { navigate: (to: string) => void }) {
                 <div>
                   <b>
                     {line.label}
-                    {line.optional ? ' (optional)' : ''}
+                    {line.optional ? ` (${t('common.optional')})` : ''}
                   </b>
                   <small>
-                    {DOC_STATE_LABELS[line.state]}
+                    {L.docState(line.state)}
                     {doc ? ` · v${doc.version} · ${(doc.byteSize / 1024).toFixed(0)} KB` : ''}
                     {doc?.reviewFeedback && line.state === 'changes_requested' ? ` — “${doc.reviewFeedback}”` : ''}
                   </small>
                 </div>
                 <span className={`case-doc-status ${line.state === 'verified' ? 'ok' : line.state === 'missing' ? 'miss' : 'wait'}`}>
-                  <Icon size={13} /> {DOC_STATE_LABELS[line.state]}
+                  <Icon size={13} /> {L.docState(line.state)}
                 </span>
                 {doc && (
-                  <button className="upload" onClick={() => download(doc)} title="Download (authenticated)">
+                  <button className="upload" onClick={() => download(doc)} title={t('doc.download')}>
                     <Download size={15} />
                   </button>
                 )}
@@ -137,7 +130,7 @@ export function Documents({ navigate }: { navigate: (to: string) => void }) {
                     onClick={() => fileInputs.current[line.type]?.click()}
                     disabled={isUploading}
                   >
-                    <Upload size={15} /> {isUploading ? 'Uploading…' : doc ? 'Replace' : 'Upload'}
+                    <Upload size={15} /> {isUploading ? t('doc.uploading') : doc ? t('doc.replace') : t('doc.upload')}
                     <input
                       ref={(el) => {
                         fileInputs.current[line.type] = el;
@@ -154,10 +147,7 @@ export function Documents({ navigate }: { navigate: (to: string) => void }) {
               </div>
             );
           })}
-          <p className="inline-note">
-            Accepted: PDF, JPEG, PNG. File contents are checked against the declared type. Replacing a document creates a
-            new version and its previous review no longer counts.
-          </p>
+          <p className="inline-note">{t('doc.uploadNote')}</p>
         </article>
       </div>
     </>

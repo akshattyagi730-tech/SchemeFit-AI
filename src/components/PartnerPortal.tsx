@@ -12,7 +12,7 @@ import {
   Download,
 } from 'lucide-react';
 import './partner-portal.css';
-import { Button, Loading, ErrorState, EmptyState, DemoBadge, PrototypeBanner } from './ui';
+import { Button, Loading, ErrorState, EmptyState, DemoBadge } from './ui';
 import {
   usePartnerSummary,
   usePartnerApplications,
@@ -114,7 +114,6 @@ export function PartnerPortal({ user }: { user: AuthUser }) {
       </header>
 
       <div className="partner-shell">
-        <PrototypeBanner />
         <section className="partner-intro">
           <div>
             <span className="portal-eyebrow">CHANNEL PARTNER WORKSPACE</span>
@@ -326,14 +325,14 @@ export function PartnerPortal({ user }: { user: AuthUser }) {
                         Reject
                       </button>
                       <button className="primary-action" onClick={() => transition('approve')}>
-                        Approve (prototype) <ChevronRight />
+                        Approve <ChevronRight />
                       </button>
                     </>
                   ) : (
                     <span className="inline-note">
                       {STATUS_LABELS[application.status]} — no further partner action.{' '}
                       {application.status === 'APPROVED' || application.status === 'REJECTED'
-                        ? 'This is a prototype workflow outcome, not a government decision or disbursement.'
+                        ? 'This is a demonstration workflow outcome, not a government decision or disbursement.'
                         : ''}
                     </span>
                   )}

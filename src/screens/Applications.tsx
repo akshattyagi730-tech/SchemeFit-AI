@@ -4,15 +4,17 @@ import { useApplication, useApplicationAction } from '../api/hooks';
 import { useActiveApplication } from '../app/active-application';
 import { useToast } from '../app/toast';
 import { ApiError } from '../api/client';
-import { formatPaise, formatDate, formatDateTime, STATUS_LABELS } from '../lib/format';
+import { useLang, useLabels } from '../i18n';
+import type { DictKey } from '../i18n/dict';
+import { formatPaise, formatDate, formatDateTime } from '../lib/format';
 import type { Application, TimelineEntry } from '../api/types';
 
-const STEPS: { label: string; statuses: Application['status'][] }[] = [
-  { label: 'Draft', statuses: ['DRAFT'] },
-  { label: 'Submitted', statuses: ['SUBMITTED'] },
-  { label: 'Partner assigned', statuses: ['ASSIGNED'] },
-  { label: 'Under review', statuses: ['UNDER_REVIEW', 'CHANGES_REQUESTED'] },
-  { label: 'Decision', statuses: ['APPROVED', 'REJECTED'] },
+const STEPS: { key: DictKey; statuses: Application['status'][] }[] = [
+  { key: 'st.DRAFT', statuses: ['DRAFT'] },
+  { key: 'st.SUBMITTED', statuses: ['SUBMITTED'] },
+  { key: 'app.step.partner', statuses: ['ASSIGNED'] },
+  { key: 'st.UNDER_REVIEW', statuses: ['UNDER_REVIEW', 'CHANGES_REQUESTED'] },
+  { key: 'app.step.decision', statuses: ['APPROVED', 'REJECTED'] },
 ];
 
 const ORDER: Application['status'][] = ['DRAFT', 'SUBMITTED', 'ASSIGNED', 'UNDER_REVIEW', 'CHANGES_REQUESTED', 'APPROVED', 'REJECTED'];
@@ -22,16 +24,18 @@ export function Applications({ navigate }: { navigate: (to: string) => void }) {
   const { data: application } = useApplication(activeId ?? undefined);
   const action = useApplicationAction(activeId ?? '');
   const { toast, errorToast } = useToast();
+  const { t } = useLang();
+  const L = useLabels();
 
-  if (isLoading) return <Loading label="Loading your applications…" />;
+  if (isLoading) return <Loading label={t('common.loading')} />;
   if (isError) return <ErrorState error={undefined} onRetry={refetch} />;
   if (!applications.length)
     return (
       <>
-        <PageTitle title="My Applications">Track every milestone in your scheme application journey.</PageTitle>
-        <EmptyState title="You have no applications yet" hint="Start one from Scheme Matches." />
+        <PageTitle title={t('app.titlePlural')}>{t('app.intro')}</PageTitle>
+        <EmptyState title={t('app.noneYet')} hint={t('app.noneYetHint')} />
         <div style={{ marginTop: 12 }}>
-          <Button onClick={() => navigate('/schemes')}>Go to Scheme Matches</Button>
+          <Button onClick={() => navigate('/schemes')}>{t('pr.goToSchemeMatches')}</Button>
         </div>
       </>
     );
@@ -41,14 +45,14 @@ export function Applications({ navigate }: { navigate: (to: string) => void }) {
   async function run(act: string, needReason = false) {
     let reason: string | undefined;
     if (needReason) {
-      reason = window.prompt('Reason:') ?? undefined;
+      reason = window.prompt(t('app.reasonPrompt')) ?? undefined;
       if (!reason) return;
     }
     try {
       await action.mutateAsync({ action: act, body: reason ? { reason } : undefined });
-      toast(`Application ${act.replace(/-/g, ' ')} done.`);
+      toast(t('app.actionDone'));
     } catch (err) {
-      errorToast(err instanceof ApiError ? err.message : 'Action failed.');
+      errorToast(err instanceof ApiError ? err.message : t('app.actionFailed'));
     }
   }
 
@@ -57,13 +61,13 @@ export function Applications({ navigate }: { navigate: (to: string) => void }) {
 
   return (
     <>
-      <PageTitle title="My Applications">One application per scheme. History is preserved even if your profile changes.</PageTitle>
+      <PageTitle title={t('app.titlePlural')}>{t('app.introPlural')}</PageTitle>
 
       {applications.length > 1 && (
         <div className="app-switcher">
           {applications.map((a) => (
             <button key={a.id} className={a.id === app.id ? 'active' : ''} onClick={() => select(a.id)}>
-              {a.reference} · {a.schemeCode} · {STATUS_LABELS[a.status]}
+              {a.reference} · {a.schemeCode} · {L.status(a.status)}
             </button>
           ))}
         </div>
@@ -72,43 +76,43 @@ export function Applications({ navigate }: { navigate: (to: string) => void }) {
       <article className="card application-hero">
         <div>
           <span className="app-id">
-            Application · {app.reference} {app.scheme?.provider && <DemoBadge>demo scheme</DemoBadge>}
+            {app.reference} {app.scheme?.provider && <DemoBadge />}
           </span>
           <h2>
             {app.scheme?.name} — {app.scheme?.program}
           </h2>
           <p>
-            <AlertTriangle /> {STATUS_LABELS[app.status]}
+            <AlertTriangle /> {L.status(app.status)}
             {app.lastReviewNote ? ` — “${app.lastReviewNote}”` : ''}
           </p>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {app.status === 'DRAFT' && (
             <Button onClick={() => run('submit')} loading={action.isPending}>
-              Submit application
+              {t('app.submit')}
             </Button>
           )}
           {app.status === 'CHANGES_REQUESTED' && (
             <Button onClick={() => run('resubmit')} loading={action.isPending}>
-              Resubmit for review
+              {t('app.resubmit')}
             </Button>
           )}
           {app.status === 'DRAFT' && (
             <button className="button outline" onClick={() => navigate('/documents')}>
-              Prepare documents <ChevronRight size={16} />
+              {t('app.prepareDocuments')} <ChevronRight size={16} />
             </button>
           )}
         </div>
       </article>
 
       <article className="card timeline-card">
-        <h2>Application journey</h2>
+        <h2>{t('app.journeyH')}</h2>
         <div className="timeline">
           {STEPS.map((step, i) => (
-            <div className={i < stepIndex ? 'complete' : i === stepIndex ? 'current' : ''} key={step.label}>
+            <div className={i < stepIndex ? 'complete' : i === stepIndex ? 'current' : ''} key={step.key}>
               <i>{i < stepIndex ? <Check /> : i + 1}</i>
-              <b>{step.label}</b>
-              <small>{i < stepIndex ? 'Done' : i === stepIndex ? 'Current' : 'Upcoming'}</small>
+              <b>{t(step.key)}</b>
+              <small>{i < stepIndex ? t('app.done') : i === stepIndex ? t('app.current') : t('app.upcoming')}</small>
             </div>
           ))}
         </div>
@@ -119,23 +123,23 @@ export function Applications({ navigate }: { navigate: (to: string) => void }) {
         <article className="card">
           <Landmark />
           <div>
-            <small>Assigned partner</small>
-            <b>{app.assignedPartnerName ?? 'Not assigned yet'}</b>
+            <small>{t('app.assignedPartner')}</small>
+            <b>{app.assignedPartnerName ?? t('app.notAssignedYet')}</b>
             <span>
               {app.assignment
-                ? `Routing score ${app.assignment.routingScore ?? '—'} · ${app.assignment.assignmentType.replace(/_/g, ' ')}`
-                : 'An administrator assigns a partner after submission.'}
+                ? t('app.routingScoreType', { score: app.assignment.routingScore ?? '—', type: app.assignment.assignmentType.replace(/_/g, ' ') })
+                : t('app.adminAssignsAfter')}
             </span>
           </div>
         </article>
         <article className="card">
           <FileText />
           <div>
-            <small>Readiness</small>
+            <small>{t('app.readinessLabel')}</small>
             <b>
-              {app.readiness ? `${app.readiness.requiredVerified}/${app.readiness.requiredTotal} verified` : '—'}
+              {app.readiness ? t('app.verifiedOf', { v: app.readiness.requiredVerified, t: app.readiness.requiredTotal }) : '—'}
             </b>
-            <span>{app.readiness ? `${app.readiness.requiredSubmitted} submitted` : 'No documents yet'}</span>
+            <span>{app.readiness ? t('dash.submittedN', { n: app.readiness.requiredSubmitted }) : t('app.noDocsYet')}</span>
           </div>
         </article>
       </div>
@@ -143,52 +147,47 @@ export function Applications({ navigate }: { navigate: (to: string) => void }) {
       {app.financingSnapshot && (
         <article className="card">
           <div className="card-head">
-            <h2>Submission snapshot</h2>
-            <span>Frozen at {formatDateTime(app.submittedAt)}</span>
+            <h2>{t('app.submissionSnapshot')}</h2>
+            <span>{t('app.frozenAt', { time: formatDateTime(app.submittedAt) })}</span>
           </div>
           <div className="results-row">
             <div>
-              <span>Project cost</span>
+              <span>{t('wiz.rv.projectCost')}</span>
               <b>{formatPaise(app.financingSnapshot.projectCostPaise)}</b>
             </div>
             <div>
-              <span>Requested loan</span>
+              <span>{t('dash.requestedLoan')}</span>
               <b>{formatPaise(app.financingSnapshot.requestedLoanPaise)}</b>
             </div>
             <div>
-              <span>Own contribution</span>
+              <span>{t('wiz.rv.ownContribution')}</span>
               <b>{formatPaise(app.financingSnapshot.ownContributionPaise)}</b>
             </div>
           </div>
           {app.financePlanSnapshot && (
             <p className="inline-note">
-              Illustrative EMI at submission: {formatPaise(app.financePlanSnapshot.monthlyInstalmentPaise)} over{' '}
-              {app.financePlanSnapshot.repaymentMonths} months · total interest{' '}
-              {formatPaise(app.financePlanSnapshot.totalInterestPaise)}.
+              {t('app.illustrativeEmiAt', { emi: formatPaise(app.financePlanSnapshot.monthlyInstalmentPaise), n: app.financePlanSnapshot.repaymentMonths })} · {t('lp.totalInterest')} {formatPaise(app.financePlanSnapshot.totalInterestPaise)}
             </p>
           )}
-          <p className="inline-note">
-            Eligibility at submission: <b>{app.eligibilitySnapshot?.status}</b>. Editing your profile now will not change
-            this record.
-          </p>
+          <p className="inline-note">{t('app.eligibilityAtSubmission', { status: app.eligibilitySnapshot?.status ?? '—' })}</p>
         </article>
       )}
 
       <article className="card">
         <div className="card-head">
-          <h2>Timeline</h2>
+          <h2>{t('app.timelineH')}</h2>
         </div>
         <div className="cond-list">
           {app.timeline
             .slice()
             .reverse()
-            .map((t: TimelineEntry, i) => (
+            .map((ev: TimelineEntry, i) => (
               <div key={i} className="passed">
                 <ChevronRight size={14} />
                 <span>
-                  <b>{t.action.replace(/_/g, ' ')}</b> — {t.fromStatus ? `${t.fromStatus} → ` : ''}
-                  {t.toStatus} · {t.actorRole} · {formatDate(t.at)}
-                  {t.reason ? ` · “${t.reason}”` : ''}
+                  <b>{ev.action.replace(/_/g, ' ')}</b> — {ev.fromStatus ? `${ev.fromStatus} → ` : ''}
+                  {ev.toStatus} · {ev.actorRole} · {formatDate(ev.at)}
+                  {ev.reason ? ` · “${ev.reason}”` : ''}
                 </span>
               </div>
             ))}

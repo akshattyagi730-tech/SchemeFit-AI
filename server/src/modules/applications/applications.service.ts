@@ -90,6 +90,14 @@ export async function createDraft(req: Request, schemeCode: string): Promise<App
   }
 
   await recordAudit(req, { action: 'application.create', resourceType: 'Application', resourceId: String(app._id) });
+  await notify({
+    recipientUserId: req.auth!.userId,
+    event: 'application_created',
+    title: 'Draft application started',
+    message: `${app.reference} for ${scheme.name} is saved as a draft. Set the loan terms, add documents, then submit.`,
+    link: '/applications',
+    applicationId: String(app._id),
+  });
   return app;
 }
 
@@ -234,9 +242,9 @@ export async function performTransition(ctx: TransitionContext): Promise<Applica
       }
     }
   } else if (action === 'approve') {
-    await notify({ recipientUserId: ownerId, event: 'application_approved', title: 'Application approved (prototype)', message: `${app.reference} was marked APPROVED in this prototype workflow. This is not a government sanction or disbursement.`, link, applicationId: String(app._id) });
+    await notify({ recipientUserId: ownerId, event: 'application_approved', title: 'Application approved (demo workflow)', message: `${app.reference} was marked APPROVED in this demonstration workflow. This is not a government sanction or disbursement.`, link, applicationId: String(app._id) });
   } else if (action === 'reject') {
-    await notify({ recipientUserId: ownerId, event: 'application_rejected', title: 'Application rejected (prototype)', message: `${app.reference} was marked REJECTED in this prototype workflow. Reason: ${ctx.reason}`, link, applicationId: String(app._id) });
+    await notify({ recipientUserId: ownerId, event: 'application_rejected', title: 'Application rejected (demo workflow)', message: `${app.reference} was marked REJECTED in this demonstration workflow. Reason: ${ctx.reason}`, link, applicationId: String(app._id) });
   }
 
   return app;

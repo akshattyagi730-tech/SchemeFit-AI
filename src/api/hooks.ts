@@ -107,6 +107,7 @@ export function useUpdateProfile() {
       qc.invalidateQueries({ queryKey: qk.profile });
       qc.invalidateQueries({ queryKey: qk.recommendations });
       qc.invalidateQueries({ queryKey: qk.documentChecklist });
+      qc.invalidateQueries({ queryKey: qk.notifications });
       qc.invalidateQueries({ queryKey: qk.me });
     },
   });

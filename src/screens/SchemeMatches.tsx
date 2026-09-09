@@ -6,6 +6,7 @@ import { useRecommendations, useCreateApplication, useApplications } from '../ap
 import { useActiveApplication } from '../app/active-application';
 import { useToast } from '../app/toast';
 import { ApiError } from '../api/client';
+import { useLang, type TFn } from '../i18n';
 import { formatPaise, bpsToPct } from '../lib/format';
 import type { Recommendation } from '../api/types';
 
@@ -32,9 +33,10 @@ export function SchemeMatches({ navigate }: { navigate: (to: string) => void }) 
   const create = useCreateApplication();
   const { select } = useActiveApplication();
   const { toast, errorToast } = useToast();
+  const { t } = useLang();
   const [compare, setCompare] = useState(false);
 
-  if (isLoading) return <Loading label="Computing your scheme matches…" />;
+  if (isLoading) return <Loading label={t('common.loading')} />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
   if (!data) return null;
 
@@ -50,10 +52,10 @@ export function SchemeMatches({ navigate }: { navigate: (to: string) => void }) 
     try {
       const app = await create.mutateAsync(code);
       select(app.id);
-      toast(`Application ${app.reference} started as a draft.`);
+      toast(t('sm.draftStarted', { ref: app.reference }));
       navigate('/loan-planner');
     } catch (err) {
-      errorToast(err instanceof ApiError ? err.message : 'Could not start the application.');
+      errorToast(err instanceof ApiError ? err.message : t('sm.couldNotStart'));
     }
   }
 
@@ -64,30 +66,30 @@ export function SchemeMatches({ navigate }: { navigate: (to: string) => void }) 
   return (
     <>
       <PageTitle
-        title="Your Scheme Matches"
+        title={t('sm.title')}
         action={
           <Button variant="outline" onClick={() => setCompare(true)}>
-            Compare Schemes
+            {t('sm.compare')}
           </Button>
         }
       >
-        A deterministic rule engine checks each scheme’s stored rules against your profile. No AI decides eligibility.
+        {t('sm.intro')}
       </PageTitle>
 
       {!data.profileComplete && (
-        <div className="prototype-banner" style={{ marginBottom: 14 }}>
+        <div className="inline-callout" style={{ marginBottom: 14 }}>
           <AlertTriangle size={15} />
           <span>
-            Complete your profile (category, purpose and the three financing amounts) to unlock ranked matches.{' '}
+            {t('sm.completeProfile')}{' '}
             <button className="auth-switch" onClick={() => navigate('/profile')}>
-              Go to My Profile
+              {t('sm.goToProfile')}
             </button>
           </span>
         </div>
       )}
 
       {eligible.length === 0 && needsInfo.length === 0 && ineligible.length === 0 && (
-        <EmptyState title="No schemes to show yet" hint="Add your profile details to see matches." />
+        <EmptyState title={t('sm.noSchemes')} hint={t('sm.noSchemesHint')} />
       )}
 
       {(eligible.length > 0 || needsInfo.length > 0) && (
@@ -96,19 +98,19 @@ export function SchemeMatches({ navigate }: { navigate: (to: string) => void }) 
         </div>
       )}
 
-      {eligible.length > 0 && <h3 className="section-h">Eligible &amp; ranked ({eligible.length})</h3>}
+      {eligible.length > 0 && <h3 className="section-h">{t('sm.eligibleRanked', { n: eligible.length })}</h3>}
       <div className="scheme-list">
         {eligible.map((r) => (
-          <SchemeCard key={r.scheme.id} rec={r} onStart={() => startApplication(r.scheme.code)} started={existingByScheme.has(r.scheme.code)} />
+          <SchemeCard key={r.scheme.id} rec={r} t={t} onStart={() => startApplication(r.scheme.code)} started={existingByScheme.has(r.scheme.code)} />
         ))}
       </div>
 
       {needsInfo.length > 0 && (
         <>
-          <h3 className="section-h">Needs more information ({needsInfo.length})</h3>
+          <h3 className="section-h">{t('sm.needsInfo', { n: needsInfo.length })}</h3>
           <div className="scheme-list">
             {needsInfo.map((r) => (
-              <SchemeCard key={r.scheme.id} rec={r} onStart={() => navigate('/profile')} started={false} needsInfo />
+              <SchemeCard key={r.scheme.id} rec={r} t={t} onStart={() => navigate('/profile')} started={false} needsInfo />
             ))}
           </div>
         </>
@@ -116,13 +118,13 @@ export function SchemeMatches({ navigate }: { navigate: (to: string) => void }) 
 
       {ineligible.length > 0 && (
         <>
-          <h3 className="section-h">Not eligible — shown with reasons ({ineligible.length})</h3>
+          <h3 className="section-h">{t('sm.notEligible', { n: ineligible.length })}</h3>
           <div className="scheme-list">
             {ineligible.map((r) => (
               <article className="card scheme-card" key={r.scheme.id}>
                 <div className="scheme-card-top">
                   <div>
-                    <span className="match low">Not eligible</span>
+                    <span className="match low">{t('sm.notEligibleTag')}</span>
                     <h2>
                       {r.scheme.name} {r.scheme.source.demoData && <DemoBadge />}
                     </h2>
@@ -132,7 +134,7 @@ export function SchemeMatches({ navigate }: { navigate: (to: string) => void }) 
                 <div className="why">
                   <Sparkles />
                   <div>
-                    <b>Why this doesn’t match yet</b>
+                    <b>{t('sm.whyNoMatch')}</b>
                     <ConditionList items={r.eligibility.failed} outcome="failed" />
                   </div>
                 </div>
@@ -151,12 +153,12 @@ export function SchemeMatches({ navigate }: { navigate: (to: string) => void }) 
         ))}
       </p>
 
-      {compare && <Comparison recs={[...eligible, ...needsInfo, ...ineligible]} onClose={() => setCompare(false)} />}
+      {compare && <Comparison recs={[...eligible, ...needsInfo, ...ineligible]} t={t} onClose={() => setCompare(false)} />}
     </>
   );
 }
 
-function SchemeCard({ rec, onStart, started, needsInfo }: { rec: Recommendation; onStart: () => void; started: boolean; needsInfo?: boolean }) {
+function SchemeCard({ rec, onStart, started, needsInfo, t }: { rec: Recommendation; onStart: () => void; started: boolean; needsInfo?: boolean; t: TFn }) {
   const s = rec.scheme;
   const score = rec.suitability?.score ?? 0;
   const [open, setOpen] = useState(false);
@@ -165,9 +167,9 @@ function SchemeCard({ rec, onStart, started, needsInfo }: { rec: Recommendation;
       <div className="scheme-card-top">
         <div>
           {rec.suitability ? (
-            <span className={`match ${score > 80 ? 'great' : score > 50 ? 'okay' : 'low'}`}>{score}/100 suitability</span>
+            <span className={`match ${score > 80 ? 'great' : score > 50 ? 'okay' : 'low'}`}>{t('sm.suitabilityTag', { n: score })}</span>
           ) : (
-            <span className="match okay">Needs info</span>
+            <span className="match okay">{t('sm.needsInfoTag')}</span>
           )}
           <h2>
             {s.name} {s.source.demoData && <DemoBadge />}
@@ -179,16 +181,16 @@ function SchemeCard({ rec, onStart, started, needsInfo }: { rec: Recommendation;
 
       <div className="scheme-specs">
         <span>
-          <b>Financing</b>
+          <b>{t('sm.financing')}</b>
           {formatPaise(s.financing.minAmountPaise)} – {formatPaise(s.financing.maxAmountPaise)}
         </span>
         <span>
-          <b>Interest</b>
+          <b>{t('sm.interest')}</b>
           {bpsToPct(s.terms.minInterestRateBps)} – {bpsToPct(s.terms.maxInterestRateBps)}
         </span>
         <span>
-          <b>Tenure</b>
-          {s.terms.minTenureMonths}–{s.terms.maxTenureMonths} months
+          <b>{t('sm.tenure')}</b>
+          {s.terms.minTenureMonths}–{s.terms.maxTenureMonths} {t('common.months')}
         </span>
         <StatusPill status={rec.suitability ? 'Eligible' : 'Needs info'} />
       </div>
@@ -196,20 +198,20 @@ function SchemeCard({ rec, onStart, started, needsInfo }: { rec: Recommendation;
       <div className="why">
         <Sparkles />
         <div>
-          <b>{needsInfo ? 'What we still need' : 'Why this fits'}</b>
+          <b>{needsInfo ? t('sm.whatWeNeed') : t('sm.whyFits')}</b>
           {needsInfo ? (
             <ConditionList items={rec.eligibility.unknown} outcome="unknown" />
           ) : (
             <>
               <button className="auth-switch" onClick={() => setOpen((o) => !o)}>
-                {open ? 'Hide factor breakdown' : 'Show factor breakdown'}
+                {open ? t('sm.hideFactors') : t('sm.showFactors')}
               </button>
               {open &&
                 rec.suitability?.factors.map((f) => (
                   <div className="factor-row" key={f.key}>
                     <b>{f.label}</b>
                     <span>
-                      {f.rawScore}/100 · weight {Math.round(f.weight * 100)}%
+                      {f.rawScore}/100 · {t('sm.weight')} {Math.round(f.weight * 100)}%
                     </span>
                     <div className="factor-bar">
                       <i style={{ width: `${f.rawScore}%` }} />
@@ -228,28 +230,28 @@ function SchemeCard({ rec, onStart, started, needsInfo }: { rec: Recommendation;
         </div>
       </div>
 
-      <Button variant={rec.suitability ? 'primary' : 'soft'} onClick={onStart} loading={false}>
-        {needsInfo ? 'Complete profile' : started ? 'Open application' : 'Start application'}
+      <Button variant={rec.suitability ? 'primary' : 'soft'} onClick={onStart}>
+        {needsInfo ? t('sm.completeProfileBtn') : started ? t('sm.openApplication') : t('sm.startApplication')}
       </Button>
     </article>
   );
 }
 
-function Comparison({ recs, onClose }: { recs: Recommendation[]; onClose: () => void }) {
+function Comparison({ recs, onClose, t }: { recs: Recommendation[]; onClose: () => void; t: TFn }) {
   return (
     <div className="modal-wrap" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
         <button className="modal-close" onClick={onClose}>
           <X />
         </button>
-        <h2>Compare Scheme Options</h2>
-        <p>Eligibility, suitability score and financing terms side by side. Suitability is a ranking, not an approval odds.</p>
+        <h2>{t('sm.compareTitle')}</h2>
+        <p>{t('sm.compareSub')}</p>
         <div className="compare-table">
           <div className="compare-head">
-            <span>Scheme</span>
-            <span>Eligibility</span>
-            <span>Suitability</span>
-            <span>Financing / Interest</span>
+            <span>{t('sm.col.scheme')}</span>
+            <span>{t('sm.col.eligibility')}</span>
+            <span>{t('sm.col.suitability')}</span>
+            <span>{t('sm.col.financingInterest')}</span>
           </div>
           {recs.map((r) => (
             <div key={r.scheme.id}>

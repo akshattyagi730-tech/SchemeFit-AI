@@ -5,6 +5,7 @@ import { ok, created } from '../../lib/http';
 import { User, type UserDoc } from '../../models/User';
 import { CitizenProfile } from '../../models/CitizenProfile';
 import { recordAudit } from '../audit/audit.service';
+import { notify } from '../notifications/notifications.service';
 import {
   clearSessionCookie,
   createSession,
@@ -46,6 +47,13 @@ export async function register(req: Request, res: Response): Promise<void> {
 
   await createSession(String(user._id), req, res);
   await recordAudit(req, { action: 'auth.register', resourceType: 'User', resourceId: String(user._id) });
+  await notify({
+    recipientUserId: String(user._id),
+    event: 'account_welcome',
+    title: 'Welcome to SchemeFit AI',
+    message: 'Open “Get Started” to answer a few questions — we’ll match every scheme you’re eligible for and list the documents you need.',
+    link: '/start',
+  });
 
   created(res, { user: publicUser(user) });
 }

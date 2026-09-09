@@ -6,6 +6,7 @@ import './styles.css';
 import './components/workspace-switch.css';
 import './components/app-additions.css';
 import { ToastProvider } from './app/toast';
+import { LangProvider, useLang } from './i18n';
 import { AuthScreen } from './app/AuthScreen';
 import { CitizenApp } from './app/CitizenApp';
 import { PartnerPortal } from './components/PartnerPortal';
@@ -21,12 +22,13 @@ const queryClient = new QueryClient({
 function Root() {
   const { data: me, isLoading } = useMe();
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
+  const { t } = useLang();
 
   if (isLoading) {
     return (
       <div className="boot-screen">
         <Loader2 className="spin" size={30} />
-        <span>Starting SchemeFit AI…</span>
+        <span>{t('boot.starting')}</span>
       </div>
     );
   }
@@ -46,10 +48,7 @@ function Root() {
   return (
     <>
       {workspace === 'partner' && (
-        <div className="session-warn">
-          You selected the partner workspace, but this account is a {role.toLowerCase()} account. Showing your workspace
-          instead.
-        </div>
+        <div className="session-warn">{t('auth.wrongWorkspace', { role: role.toLowerCase() })}</div>
       )}
       <CitizenApp user={me.user} />
     </>
@@ -59,9 +58,11 @@ function Root() {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ToastProvider>
-        <Root />
-      </ToastProvider>
+      <LangProvider>
+        <ToastProvider>
+          <Root />
+        </ToastProvider>
+      </LangProvider>
     </QueryClientProvider>
   </StrictMode>,
 );

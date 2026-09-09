@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SchemeMatches } from './SchemeMatches';
 import { ToastProvider } from '../app/toast';
+import { LangProvider } from '../i18n';
 
 const recommendations = {
   generatedAt: '2026-09-07T00:00:00Z',
@@ -62,7 +63,9 @@ function wrap(ui: React.ReactElement) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <ToastProvider>{ui}</ToastProvider>
+      <LangProvider>
+        <ToastProvider>{ui}</ToastProvider>
+      </LangProvider>
     </QueryClientProvider>,
   );
 }
@@ -74,7 +77,7 @@ describe('SchemeMatches screen', () => {
     mockFetch();
     wrap(<SchemeMatches navigate={() => {}} />);
 
-    expect(screen.getByText(/Computing your scheme matches/i)).toBeInTheDocument();
+    expect(screen.getByText(/Loading/i)).toBeInTheDocument();
 
     await waitFor(() => expect(screen.getByText('NSFDC Term Loan')).toBeInTheDocument());
     expect(screen.getByText(/Eligible & ranked \(1\)/)).toBeInTheDocument();

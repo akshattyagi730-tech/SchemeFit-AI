@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
-import { Bell, ChevronDown, Globe2, Menu, Search, X } from 'lucide-react';
-import { Logo, PrototypeBanner } from '../components/ui';
+import { useEffect, useRef, useState } from 'react';
+import { Bell, ChevronDown, Globe2, Menu, Search, X, Check } from 'lucide-react';
+import { Logo } from '../components/ui';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { AshokaEmblem } from '../components/AshokaEmblem';
 import { navFor } from './nav';
 import { useLogout, useMe, useNotifications, useMarkNotificationsRead } from '../api/hooks';
-import { formatDate } from '../lib/format';
+import { formatDate, relativeParts } from '../lib/format';
+import { useLang, LANGS } from '../i18n';
 import { Dashboard } from '../screens/Dashboard';
 import { GetStarted } from '../screens/GetStarted';
 import { Profile } from '../screens/Profile';
@@ -32,11 +33,62 @@ function useRoutePath() {
   return { path, navigate };
 }
 
+function LangSwitch() {
+  const { lang, setLang } = useLang();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const h = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    addEventListener('mousedown', h);
+    return () => removeEventListener('mousedown', h);
+  }, []);
+  const current = LANGS.find((l) => l.code === lang)!;
+  return (
+    <div className="lang-switch" ref={ref}>
+      <button className="lang-btn" onClick={() => setOpen((o) => !o)} aria-label="Language">
+        <Globe2 size={17} />
+        <b>{lang === 'hi' ? 'हिं' : 'EN'}</b>
+        <ChevronDown size={14} />
+      </button>
+      {open && (
+        <div className="lang-menu">
+          {LANGS.map((l) => (
+            <button
+              key={l.code}
+              className={l.code === lang ? 'active' : ''}
+              onClick={() => {
+                setLang(l.code);
+                setOpen(false);
+              }}
+            >
+              {l.code === current.code ? <Check size={13} /> : <span style={{ width: 13 }} />}
+              {l.native}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function NotificationsBell() {
   const [open, setOpen] = useState(false);
   const { data } = useNotifications();
   const markRead = useMarkNotificationsRead();
+  const { t } = useLang();
   const unread = data?.meta?.unread ?? 0;
+
+  const rel = (iso: string) => {
+    const { unit, n } = relativeParts(iso);
+    if (unit === 'now') return t('notif.justNow');
+    if (unit === 'min') return t('notif.minutesAgo', { n });
+    if (unit === 'hour') return t('notif.hoursAgo', { n });
+    if (unit === 'day') return t('notif.daysAgo', { n });
+    return formatDate(iso);
+  };
+
   return (
     <div className="bell" style={{ position: 'relative' }} onClick={() => setOpen((o) => !o)}>
       <Bell />
@@ -44,15 +96,15 @@ function NotificationsBell() {
       {open && (
         <div className="notif-panel" onClick={(e) => e.stopPropagation()}>
           <h4>
-            Notifications
-            {unread > 0 && <button onClick={() => markRead.mutate('all')}>Mark all read</button>}
+            {t('notif.title')}
+            {unread > 0 && <button onClick={() => markRead.mutate('all')}>{t('notif.markAllRead')}</button>}
           </h4>
-          {(data?.notifications ?? []).length === 0 && <div className="notif-item">No notifications yet.</div>}
+          {(data?.notifications ?? []).length === 0 && <div className="notif-item">{t('notif.empty')}</div>}
           {(data?.notifications ?? []).map((n) => (
             <div key={n.id} className={`notif-item ${n.read ? '' : 'unread'}`}>
               <b>{n.title}</b>
               <span>{n.message}</span>
-              <small>{formatDate(n.createdAt)}</small>
+              <small>{rel(n.createdAt)}</small>
             </div>
           ))}
         </div>
@@ -66,9 +118,9 @@ export function CitizenApp({ user }: { user: AuthUser }) {
   const [sideOpen, setSideOpen] = useState(false);
   const logout = useLogout();
   const { data: me } = useMe();
+  const { t, lang } = useLang();
   const items = navFor(user.role);
 
-  // Redirect away from routes this role can't see.
   useEffect(() => {
     if (path !== '/' && !items.some((i) => i.route === path)) navigate(items[0]?.route ?? '/');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -108,7 +160,7 @@ export function CitizenApp({ user }: { user: AuthUser }) {
         </button>
         <Logo />
         <nav>
-          {items.map(({ label, route, icon: Icon }) => (
+          {items.map(({ labelKey, route, icon: Icon }) => (
             <button
               key={route}
               className={path === route ? 'active' : ''}
@@ -118,7 +170,7 @@ export function CitizenApp({ user }: { user: AuthUser }) {
               }}
             >
               <Icon size={21} />
-              <span>{label}</span>
+              <span>{t(labelKey)}</span>
             </button>
           ))}
         </nav>
@@ -130,13 +182,25 @@ export function CitizenApp({ user }: { user: AuthUser }) {
             <i />
           </div>
           <p>
-            Viksit Bharat
-            <br />
-            Inclusive Growth
-            <br />
-            Stronger Tomorrow
+            {lang === 'hi' ? (
+              <>
+                विकसित भारत
+                <br />
+                समावेशी विकास
+                <br />
+                सशक्त कल
+              </>
+            ) : (
+              <>
+                Viksit Bharat
+                <br />
+                Inclusive Growth
+                <br />
+                Stronger Tomorrow
+              </>
+            )}
           </p>
-          <small>Prototype — not an official portal</small>
+          <small>{t('disc.footerNote')}</small>
         </div>
       </aside>
 
@@ -146,20 +210,16 @@ export function CitizenApp({ user }: { user: AuthUser }) {
             <Menu />
           </button>
           <div className="mission">
-            <b>
-              Building an <span>Inclusive India</span>
-            </b>
+            <b>{t('brand.mission')}</b>
             <i />
-            <small>Rule-based scheme matching · prototype</small>
+            <small>{t('brand.missionSub')}</small>
           </div>
           <div className="search">
             <Search size={22} />
-            <span>Search schemes, banks, or help…</span>
+            <span>{t('header.search')}</span>
           </div>
           <div className="head-actions">
-            <Globe2 />
-            <b>EN</b>
-            <ChevronDown size={15} />
+            <LangSwitch />
             <span className="divider" />
             <NotificationsBell />
             <span className="divider" />
@@ -173,18 +233,19 @@ export function CitizenApp({ user }: { user: AuthUser }) {
             </span>
             <div className="profile-label">
               <b>{user.displayName}</b>
-              <small>{user.role === 'ADMIN' ? 'Administrator' : 'Applicant'}</small>
+              <small>{user.role === 'ADMIN' ? t('header.administrator') : t('header.applicant')}</small>
             </div>
             <button className="workspace-switch" onClick={() => logout.mutate()}>
-              Sign out
+              {t('header.signOut')}
             </button>
           </div>
         </header>
 
         {sessionExpiresSoon && (
-          <div className="session-warn">Your session expires {formatDate(me!.session.expiresAt)}. Sign in again to extend it.</div>
+          <div className="session-warn">
+            {t('state.sessionExpiresOn', { date: formatDate(me!.session.expiresAt) })}
+          </div>
         )}
-        <PrototypeBanner />
 
         <div className="page">
           <ErrorBoundary key={path}>{screen}</ErrorBoundary>
@@ -192,8 +253,11 @@ export function CitizenApp({ user }: { user: AuthUser }) {
 
         <footer>
           <Logo />
-          <span>Because every entrepreneur deserves a fair chance.</span>
-          <div>Prototype · Smart India Hackathon · Not affiliated with the Government of India</div>
+          <span>{t('disc.tagline')}</span>
+          <div className="footer-links">
+            {t('footer.about')}　|　{t('footer.help')}　|　{t('footer.privacy')}　|　{t('footer.terms')}
+          </div>
+          <div className="footer-disc">{t('disc.short')}</div>
         </footer>
       </main>
 

@@ -1,8 +1,35 @@
 import React from 'react';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { useLang } from '../i18n';
 
 interface State {
   error: Error | null;
+}
+
+function Fallback({ error, onReset }: { error: Error; onReset: () => void }) {
+  const { t } = useLang();
+  return (
+    <div className="state-block error" role="alert">
+      <AlertTriangle size={26} />
+      <b>{t('state.screenError')}</b>
+      <span>{t('state.stillSignedIn')}</span>
+      <small>{error.message}</small>
+      <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+        <button className="button outline" onClick={onReset}>
+          {t('common.tryAgain')} <RotateCcw size={15} />
+        </button>
+        <button
+          className="button soft"
+          onClick={() => {
+            history.pushState({}, '', '/');
+            onReset();
+          }}
+        >
+          {t('common.backToDashboard')}
+        </button>
+      </div>
+    </div>
+  );
 }
 
 /**
@@ -24,30 +51,7 @@ export class ErrorBoundary extends React.Component<{ children: React.ReactNode }
   reset = () => this.setState({ error: null });
 
   render() {
-    if (this.state.error) {
-      return (
-        <div className="state-block error" role="alert">
-          <AlertTriangle size={26} />
-          <b>This screen hit an unexpected error</b>
-          <span>You are still signed in. Try again, or go back to the dashboard.</span>
-          <small>{this.state.error.message}</small>
-          <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-            <button className="button outline" onClick={this.reset}>
-              Try again <RotateCcw size={15} />
-            </button>
-            <button
-              className="button soft"
-              onClick={() => {
-                history.pushState({}, '', '/');
-                this.reset();
-              }}
-            >
-              Back to dashboard
-            </button>
-          </div>
-        </div>
-      );
-    }
+    if (this.state.error) return <Fallback error={this.state.error} onReset={this.reset} />;
     return this.props.children;
   }
 }

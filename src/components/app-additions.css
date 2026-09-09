@@ -189,3 +189,25 @@ input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
 @media (max-width: 700px) {
   .review-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ---- Language switch ---- */
+.lang-switch { position: relative; }
+.lang-btn { display: inline-flex; align-items: center; gap: 5px; background: transparent; color: #2b4a7c; font-size: 13px; padding: 6px 8px; border-radius: 7px; }
+.lang-btn:hover { background: #eef4f7; }
+.lang-btn b { font-weight: 700; }
+.lang-menu { position: absolute; right: 0; top: 40px; background: #fff; border: 1px solid var(--line); border-radius: 9px; box-shadow: 0 12px 30px rgba(20,50,80,.16); z-index: 40; padding: 5px; min-width: 150px; }
+.lang-menu button { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: transparent; padding: 9px 10px; border-radius: 6px; font-size: 13px; color: #2b4a7c; }
+.lang-menu button:hover { background: #f2f7fa; }
+.lang-menu button.active { color: #007555; font-weight: 700; }
+.lang-menu svg { color: #007555; }
+
+/* ---- Footer: single discreet disclosure line ---- */
+.footer-links { color: #3c5787; }
+.footer-disc { flex-basis: 100%; margin-top: 6px; font-size: 10px; color: #6a80a8; line-height: 1.5; }
+footer { flex-wrap: wrap; }
+
+/* Devanagari sits a little tall — give lines room in dense components */
+:root[lang='hi'] .scheme-specs, :root[lang='hi'] .wizard-step span { line-height: 1.4; }
+
+.inline-callout { display: flex; align-items: flex-start; gap: 10px; background: #eef7fb; border: 1px solid #cfe6f2; color: #23557a; padding: 10px 14px; font-size: 12px; line-height: 1.45; border-radius: 8px; }
+.inline-callout > svg { color: #2f80b4; flex: none; margin-top: 2px; }

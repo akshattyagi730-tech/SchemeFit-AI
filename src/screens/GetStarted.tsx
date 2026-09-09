@@ -7,62 +7,54 @@ import { DocumentChecklist } from '../components/DocumentChecklist';
 import { useProfile, useUpdateProfile } from '../api/hooks';
 import { useToast } from '../app/toast';
 import { ApiError } from '../api/client';
-import { paiseToRupees, rupeesToPaise, placeError, PURPOSE_GROUPS, PURPOSE_LABELS, CATEGORY_LABELS, AREA_LABELS } from '../lib/format';
+import { useLang, useLabels } from '../i18n';
+import type { DictKey } from '../i18n/dict';
+import { paiseToRupees, rupeesToPaise, placeErrorKey } from '../lib/format';
 
 const GROUP_ICON: Record<string, typeof Briefcase> = {
-  'Business & self-employment': Briefcase,
-  'Education & skilling': GraduationCap,
-  'Agriculture & allied': Sprout,
-  Home: Home,
-  'Vehicle for livelihood': Bike,
-  Personal: Wallet,
+  business: Briefcase, education: GraduationCap, agri: Sprout, home: Home, vehicle: Bike, personal: Wallet,
 };
+
+// Purpose groups keyed to dict entries (labels come from useLabels()).
+const PURPOSE_GROUPS: { id: string; nameKey: DictKey; hintKey: DictKey; purposes: string[] }[] = [
+  { id: 'business', nameKey: 'pg.business', hintKey: 'pg.businessHint', purposes: ['business_new', 'business_expansion', 'equipment_purchase', 'working_capital'] },
+  { id: 'education', nameKey: 'pg.education', hintKey: 'pg.educationHint', purposes: ['education', 'skilling'] },
+  { id: 'agri', nameKey: 'pg.agri', hintKey: 'pg.agriHint', purposes: ['agriculture'] },
+  { id: 'home', nameKey: 'pg.home', hintKey: 'pg.homeHint', purposes: ['housing'] },
+  { id: 'vehicle', nameKey: 'pg.vehicle', hintKey: 'pg.vehicleHint', purposes: ['vehicle'] },
+  { id: 'personal', nameKey: 'pg.personal', hintKey: 'pg.personalHint', purposes: ['personal'] },
+];
 
 const CATEGORIES = ['GENERAL', 'OBC', 'SC', 'ST', 'EWS', 'MINORITY'];
 const AREAS = ['rural', 'urban', 'semi_urban'];
-const MAX_RUPEES = 100_000_000; // ₹10 crore — matches the server cap (₹10 cr in paise)
+const MAX_RUPEES = 100_000_000;
 
 type Form = {
-  purpose: string;
-  fullName: string;
-  age: string;
-  category: string;
-  state: string;
-  district: string;
-  areaType: string;
-  annualIncome: string;
-  businessActivity: string;
-  businessStage: string;
-  hasBusinessPlan: string;
-  educationCourse: string;
-  projectCost: string;
-  ownContribution: string;
-  requestedLoan: string;
+  purpose: string; fullName: string; age: string; category: string; state: string; district: string; areaType: string;
+  annualIncome: string; businessActivity: string; businessStage: string; hasBusinessPlan: string; educationCourse: string;
+  projectCost: string; ownContribution: string; requestedLoan: string;
 };
-
 const EMPTY: Form = {
   purpose: '', fullName: '', age: '', category: '', state: '', district: '', areaType: '',
   annualIncome: '', businessActivity: '', businessStage: '', hasBusinessPlan: '', educationCourse: '',
   projectCost: '', ownContribution: '', requestedLoan: '',
 };
 
+type FErr = { key: DictKey; vars?: Record<string, string | number> };
+
 const rupeeStr = (paise: number | null | undefined) => (paise == null ? '' : String(paiseToRupees(paise)));
 const isBusiness = (p: string) => p.startsWith('business') || p === 'equipment_purchase' || p === 'working_capital';
 const isStudy = (p: string) => p === 'education' || p === 'skilling';
 const inr = (n: number) => `₹${Math.round(n).toLocaleString('en-IN')}`;
 
-/** Which wizard step owns each field (form key AND server path). */
 const FIELD_STEP: Record<string, number> = {
   fullName: 1, age: 1, category: 1, state: 1, district: 1, areaType: 1,
   annualIncome: 2, annualIncomePaise: 2, businessActivity: 2, educationCourse: 2,
-  projectCost: 3, projectCostPaise: 3, ownContribution: 3, ownContributionPaise: 3,
-  requestedLoan: 3, requestedLoanPaise: 3,
+  projectCost: 3, projectCostPaise: 3, ownContribution: 3, ownContributionPaise: 3, requestedLoan: 3, requestedLoanPaise: 3,
 };
 const SERVER_TO_FORM: Record<string, string> = {
-  annualIncomePaise: 'annualIncome', projectCostPaise: 'projectCost',
-  ownContributionPaise: 'ownContribution', requestedLoanPaise: 'requestedLoan',
+  annualIncomePaise: 'annualIncome', projectCostPaise: 'projectCost', ownContributionPaise: 'ownContribution', requestedLoanPaise: 'requestedLoan',
 };
-
 const isPosNumber = (raw: string) => raw.trim() !== '' && Number.isFinite(Number(raw)) && Number(raw) > 0;
 const isNonNegNumber = (raw: string) => raw.trim() !== '' && Number.isFinite(Number(raw)) && Number(raw) >= 0;
 
@@ -70,86 +62,81 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
   const { data, isLoading, isError, error, refetch } = useProfile();
   const update = useUpdateProfile();
   const { toast, errorToast } = useToast();
+  const { t } = useLang();
+  const L = useLabels();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<Form>(EMPTY);
-  const [errs, setErrs] = useState<Record<string, string>>({});
+  const [errs, setErrs] = useState<Record<string, FErr>>({});
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     if (!data) return;
     const p = data.profile;
     setForm({
-      purpose: p.purpose ?? '',
-      fullName: p.fullName ?? '',
-      age: p.age != null ? String(p.age) : '',
-      category: p.category ?? '',
-      state: p.state ?? '',
-      district: p.district ?? '',
-      areaType: p.areaType ?? '',
+      purpose: p.purpose ?? '', fullName: p.fullName ?? '', age: p.age != null ? String(p.age) : '',
+      category: p.category ?? '', state: p.state ?? '', district: p.district ?? '', areaType: p.areaType ?? '',
       annualIncome: rupeeStr(p.annualIncomePaise),
-      businessActivity: p.businessDetails?.activity ?? '',
-      businessStage: p.businessDetails?.stage ?? '',
+      businessActivity: p.businessDetails?.activity ?? '', businessStage: p.businessDetails?.stage ?? '',
       hasBusinessPlan: p.hasBusinessPlan == null ? '' : p.hasBusinessPlan ? 'yes' : 'no',
       educationCourse: p.educationDetails?.course ?? '',
-      projectCost: rupeeStr(p.projectCostPaise),
-      ownContribution: rupeeStr(p.ownContributionPaise),
-      requestedLoan: rupeeStr(p.requestedLoanPaise),
+      projectCost: rupeeStr(p.projectCostPaise), ownContribution: rupeeStr(p.ownContributionPaise), requestedLoan: rupeeStr(p.requestedLoanPaise),
     });
   }, [data]);
 
   const set = (k: keyof Form, v: string) => {
     setForm((f) => ({ ...f, [k]: v }));
-    setErrs((e) => (e[k] ? { ...e, [k]: '' } : e)); // clear this field's error as the user types
+    setErrs((e) => {
+      if (!e[k]) return e;
+      const { [k]: _drop, ...rest } = e;
+      void _drop;
+      return rest;
+    });
   };
 
-  const steps = ['Purpose', 'About you', 'Your situation', 'The money', 'Review'];
+  const steps: DictKey[] = ['wiz.step.purpose', 'wiz.step.about', 'wiz.step.situation', 'wiz.step.money', 'wiz.step.review'];
 
   const gap = useMemo(() => {
     if (!isPosNumber(form.projectCost)) return null;
-    const pc = Number(form.projectCost);
-    const oc = Number(form.ownContribution || 0);
-    const rl = Number(form.requestedLoan || 0);
-    return pc - oc - rl;
+    return Number(form.projectCost) - Number(form.ownContribution || 0) - Number(form.requestedLoan || 0);
   }, [form.projectCost, form.ownContribution, form.requestedLoan]);
 
-  /** Validate one step. Returns a field→message map (empty = valid). */
-  function validateStep(s: number): Record<string, string> {
-    const e: Record<string, string> = {};
-    if (s === 0 && !form.purpose) e.purpose = 'Choose what you need the loan for';
+  function validateStep(s: number): Record<string, FErr> {
+    const e: Record<string, FErr> = {};
+    if (s === 0 && !form.purpose) e.purpose = { key: 'v.choosePurpose' };
     if (s === 1) {
-      if (form.fullName.trim().length < 2) e.fullName = 'Enter your full name';
+      if (form.fullName.trim().length < 2) e.fullName = { key: 'v.enterFullName' };
       const age = Number(form.age);
-      if (form.age.trim() === '') e.age = 'Enter your age';
-      else if (!/^\d+$/.test(form.age.trim()) || !Number.isInteger(age)) e.age = 'Age must be a whole number';
-      else if (age < 16 || age > 100) e.age = 'Age must be between 16 and 100';
-      if (!form.category) e.category = 'Select your social category';
-      if (!form.state.trim()) e.state = 'Enter your state';
-      else { const pe = placeError(form.state); if (pe) e.state = pe; }
-      if (!form.district.trim()) e.district = 'Enter your district';
-      else { const pe = placeError(form.district); if (pe) e.district = pe; }
-      if (!form.areaType) e.areaType = 'Select an area type';
+      if (form.age.trim() === '') e.age = { key: 'v.enterAge' };
+      else if (!/^\d+$/.test(form.age.trim()) || !Number.isInteger(age)) e.age = { key: 'v.ageWhole' };
+      else if (age < 16 || age > 100) e.age = { key: 'v.ageRange' };
+      if (!form.category) e.category = { key: 'v.selectCategory' };
+      if (!form.state.trim()) e.state = { key: 'v.enterState' };
+      else { const k = placeErrorKey(form.state); if (k) e.state = { key: k }; }
+      if (!form.district.trim()) e.district = { key: 'v.enterDistrict' };
+      else { const k = placeErrorKey(form.district); if (k) e.district = { key: k }; }
+      if (!form.areaType) e.areaType = { key: 'v.selectArea' };
     }
     if (s === 2) {
-      if (form.annualIncome.trim() === '') e.annualIncome = 'Enter your annual household income';
-      else if (!isNonNegNumber(form.annualIncome)) e.annualIncome = 'Enter a valid amount in rupees (digits only)';
-      else if (Number(form.annualIncome) > MAX_RUPEES) e.annualIncome = `Enter rupees, not paise — maximum ${inr(MAX_RUPEES)}`;
-      if (isBusiness(form.purpose) && !form.businessActivity.trim()) e.businessActivity = 'Briefly describe the business or activity';
-      if (form.purpose === 'agriculture' && !form.businessActivity.trim()) e.businessActivity = 'Which activity? (e.g. dairy, crop cultivation)';
-      if (isStudy(form.purpose) && !form.educationCourse.trim()) e.educationCourse = 'Enter the course or programme';
+      if (form.annualIncome.trim() === '') e.annualIncome = { key: 'v.enterIncome' };
+      else if (!isNonNegNumber(form.annualIncome)) e.annualIncome = { key: 'v.validAmount' };
+      else if (Number(form.annualIncome) > MAX_RUPEES) e.annualIncome = { key: 'v.maxRupees', vars: { max: inr(MAX_RUPEES) } };
+      if (isBusiness(form.purpose) && !form.businessActivity.trim()) e.businessActivity = { key: 'v.describeActivity' };
+      if (form.purpose === 'agriculture' && !form.businessActivity.trim()) e.businessActivity = { key: 'v.whichActivity' };
+      if (isStudy(form.purpose) && !form.educationCourse.trim()) e.educationCourse = { key: 'v.enterCourse' };
     }
     if (s === 3) {
-      if (!isPosNumber(form.projectCost)) e.projectCost = 'Enter the total project cost in rupees';
-      else if (Number(form.projectCost) > MAX_RUPEES) e.projectCost = `Maximum ${inr(MAX_RUPEES)}`;
-      if (form.ownContribution.trim() !== '' && !isNonNegNumber(form.ownContribution)) e.ownContribution = 'Enter a valid amount (digits only)';
-      else if (isNonNegNumber(form.ownContribution) && Number(form.ownContribution) > MAX_RUPEES) e.ownContribution = `Maximum ${inr(MAX_RUPEES)}`;
-      if (!isPosNumber(form.requestedLoan)) e.requestedLoan = 'Enter the loan amount you need in rupees';
-      else if (Number(form.requestedLoan) > MAX_RUPEES) e.requestedLoan = `Maximum ${inr(MAX_RUPEES)}`;
+      if (!isPosNumber(form.projectCost)) e.projectCost = { key: 'v.enterProjectCost' };
+      else if (Number(form.projectCost) > MAX_RUPEES) e.projectCost = { key: 'v.maxAmt', vars: { max: inr(MAX_RUPEES) } };
+      if (form.ownContribution.trim() !== '' && !isNonNegNumber(form.ownContribution)) e.ownContribution = { key: 'v.validAmt2' };
+      else if (isNonNegNumber(form.ownContribution) && Number(form.ownContribution) > MAX_RUPEES) e.ownContribution = { key: 'v.maxAmt', vars: { max: inr(MAX_RUPEES) } };
+      if (!isPosNumber(form.requestedLoan)) e.requestedLoan = { key: 'v.enterLoan' };
+      else if (Number(form.requestedLoan) > MAX_RUPEES) e.requestedLoan = { key: 'v.maxAmt', vars: { max: inr(MAX_RUPEES) } };
       if (!e.projectCost && !e.requestedLoan) {
         const pc = Number(form.projectCost);
         const oc = Number(form.ownContribution || 0);
         const rl = Number(form.requestedLoan);
-        if (oc > pc) e.ownContribution = `Own contribution cannot exceed the project cost (${inr(pc)})`;
-        else if (oc + rl > pc) e.requestedLoan = `Own contribution + loan (${inr(oc + rl)}) is more than the project cost (${inr(pc)})`;
+        if (oc > pc) e.ownContribution = { key: 'v.ownExceedsCost', vars: { cost: inr(pc) } };
+        else if (oc + rl > pc) e.requestedLoan = { key: 'v.sumExceedsCost', vars: { sum: inr(oc + rl), cost: inr(pc) } };
       }
     }
     return e;
@@ -157,26 +144,22 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
 
   function next() {
     const e = validateStep(step);
-    if (Object.keys(e).length) {
-      setErrs(e);
-      return;
-    }
+    if (Object.keys(e).length) return setErrs(e);
     setErrs({});
     setStep((s) => Math.min(4, s + 1));
   }
 
-  function goToFirstError(e: Record<string, string>) {
+  function goToFirstError(e: Record<string, FErr>) {
     const firstStep = Math.min(...Object.keys(e).map((k) => FIELD_STEP[k] ?? 4));
     setErrs(e);
     setStep(firstStep);
   }
 
   async function submit() {
-    // Re-validate every earlier step so the Review page can never submit garbage.
     const all = { ...validateStep(1), ...validateStep(2), ...validateStep(3) };
     if (Object.keys(all).length) {
       goToFirstError(all);
-      errorToast('Some answers need fixing — we’ve taken you back to the first one.');
+      errorToast(t('wiz.errFixToast'));
       return;
     }
     setErrs({});
@@ -200,69 +183,64 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
     try {
       await update.mutateAsync(patch);
       setSaved(true);
-      toast('Saved. Your matches and document checklist are ready.');
+      toast(t('wiz.savedToast'));
     } catch (err) {
       if (err instanceof ApiError && err.fieldErrors.length) {
-        // Map server field paths back to wizard fields + jump to the right step.
-        const mapped: Record<string, string> = {};
-        for (const f of err.fieldErrors) mapped[SERVER_TO_FORM[f.path] ?? f.path] = f.message;
+        const mapped: Record<string, FErr> = {};
+        for (const f of err.fieldErrors) mapped[SERVER_TO_FORM[f.path] ?? f.path] = { key: 'v.correctFields', vars: {} };
+        // keep server text visible via toast; jump to the step
         goToFirstError(mapped);
-        errorToast('The server rejected an answer — we’ve taken you to it.');
+        errorToast(err.fieldErrors[0]?.message ?? t('wiz.errServerToast'));
       } else {
-        errorToast(err instanceof ApiError ? err.message : 'Could not save right now. Your session is fine — please try again.');
+        errorToast(err instanceof ApiError ? err.message : t('wiz.errGenericToast'));
       }
     }
   }
 
-  if (isLoading) return <Loading label="Loading…" />;
+  if (isLoading) return <Loading label={t('common.loading')} />;
   if (isError) return <ErrorState error={error} onRetry={refetch} />;
 
-  const Err = ({ k }: { k: string }) => (errs[k] ? <span className="field-error">{errs[k]}</span> : null);
+  const Err = ({ k }: { k: string }) => {
+    const e = errs[k];
+    return e ? <span className="field-error">{t(e.key, e.vars)}</span> : null;
+  };
 
   return (
     <>
-      <PageTitle title="Tell us what you need">
-        A few questions, then a deterministic rule engine checks every scheme’s stored rules against your answers. No AI
-        decides eligibility.
-      </PageTitle>
+      <PageTitle title={t('wiz.title')}>{t('wiz.intro')}</PageTitle>
 
       <div className="wizard-steps">
         {steps.map((label, i) => (
           <div key={label} className={`wizard-step ${i === step ? 'current' : i < step ? 'done' : ''}`}>
             <i>{i < step ? <Check size={13} /> : i + 1}</i>
-            <span>{label}</span>
+            <span>{t(label)}</span>
           </div>
         ))}
       </div>
 
       <article className="card wizard-card">
-        {/* STEP 0 — purpose */}
         {step === 0 && (
           <div className="wizard-body">
-            <h2>What do you need the loan for?</h2>
-            <p className="wizard-hint">Pick the closest one. You can change it later in My Profile.</p>
+            <h2>{t('wiz.purposeQ')}</h2>
+            <p className="wizard-hint">{t('wiz.purposeHint')}</p>
             <Err k="purpose" />
             <div className="purpose-groups">
               {PURPOSE_GROUPS.map((g) => {
-                const Icon = GROUP_ICON[g.group] ?? Briefcase;
+                const Icon = GROUP_ICON[g.id] ?? Briefcase;
                 return (
-                  <div className="purpose-group" key={g.group}>
+                  <div className="purpose-group" key={g.id}>
                     <div className="purpose-group-head">
                       <Icon size={17} />
                       <div>
-                        <b>{g.group}</b>
-                        <small>{g.hint}</small>
+                        <b>{t(g.nameKey)}</b>
+                        <small>{t(g.hintKey)}</small>
                       </div>
                     </div>
                     <div className="purpose-options">
                       {g.purposes.map((p) => (
-                        <button
-                          key={p}
-                          className={`purpose-pick ${form.purpose === p ? 'selected' : ''}`}
-                          onClick={() => set('purpose', p)}
-                        >
+                        <button key={p} className={`purpose-pick ${form.purpose === p ? 'selected' : ''}`} onClick={() => set('purpose', p)}>
                           {form.purpose === p && <Check size={13} />}
-                          {PURPOSE_LABELS[p] ?? p}
+                          {L.purpose(p)}
                         </button>
                       ))}
                     </div>
@@ -273,121 +251,97 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
           </div>
         )}
 
-        {/* STEP 1 — about you */}
         {step === 1 && (
           <div className="wizard-body">
-            <h2>About you</h2>
-            <p className="wizard-hint">Category and location decide which targeted schemes you qualify for.</p>
+            <h2>{t('wiz.aboutH')}</h2>
+            <p className="wizard-hint">{t('wiz.aboutHint')}</p>
             <div className="form-grid">
               <label>
-                Full name
+                {t('auth.fullName')}
                 <input value={form.fullName} onChange={(e) => set('fullName', e.target.value)} />
                 <Err k="fullName" />
               </label>
               <label>
-                Age
-                <input
-                  type="number" inputMode="numeric" min={16} max={100}
-                  value={form.age}
-                  onChange={(e) => set('age', e.target.value.replace(/[^\d]/g, ''))}
-                />
+                {t('wiz.rv.age')}
+                <input type="number" inputMode="numeric" min={16} max={100} value={form.age} onChange={(e) => set('age', e.target.value.replace(/[^\d]/g, ''))} />
                 <Err k="age" />
               </label>
               <label>
-                Social category
+                {t('wiz.socialCategory')}
                 <select value={form.category} onChange={(e) => set('category', e.target.value)}>
-                  <option value="">Select…</option>
+                  <option value="">{t('common.select')}</option>
                   {CATEGORIES.map((c) => (
-                    <option key={c} value={c}>
-                      {CATEGORY_LABELS[c] ?? c}
-                    </option>
+                    <option key={c} value={c}>{L.category(c)}</option>
                   ))}
                 </select>
                 <Err k="category" />
               </label>
               <label>
-                Area type
+                {t('wiz.areaType')}
                 <select value={form.areaType} onChange={(e) => set('areaType', e.target.value)}>
-                  <option value="">Select…</option>
+                  <option value="">{t('common.select')}</option>
                   {AREAS.map((a) => (
-                    <option key={a} value={a}>
-                      {AREA_LABELS[a] ?? a}
-                    </option>
+                    <option key={a} value={a}>{L.area(a)}</option>
                   ))}
                 </select>
                 <Err k="areaType" />
               </label>
               <label>
-                State
-                <input value={form.state} onChange={(e) => set('state', e.target.value)} placeholder="e.g. Bihar" maxLength={60} />
+                {t('wiz.state')}
+                <input value={form.state} onChange={(e) => set('state', e.target.value)} maxLength={60} />
                 <Err k="state" />
               </label>
               <label>
-                District
-                <input value={form.district} onChange={(e) => set('district', e.target.value)} placeholder="e.g. Sitamarhi" maxLength={60} />
+                {t('wiz.district')}
+                <input value={form.district} onChange={(e) => set('district', e.target.value)} maxLength={60} />
                 <Err k="district" />
               </label>
             </div>
           </div>
         )}
 
-        {/* STEP 2 — situation */}
         {step === 2 && (
           <div className="wizard-body">
-            <h2>Your situation</h2>
-            <p className="wizard-hint">Household income is checked against income-linked schemes.</p>
+            <h2>{t('wiz.situationH')}</h2>
+            <p className="wizard-hint">{t('wiz.situationHint')}</p>
             <div className="form-grid">
               <label>
-                Annual household income (₹)
-                <input
-                  type="number" inputMode="numeric" min={0} max={MAX_RUPEES}
-                  value={form.annualIncome}
-                  onChange={(e) => set('annualIncome', e.target.value.replace(/[^\d]/g, ''))}
-                />
+                {t('wiz.annualIncome')}
+                <input type="number" inputMode="numeric" min={0} max={MAX_RUPEES} value={form.annualIncome} onChange={(e) => set('annualIncome', e.target.value.replace(/[^\d]/g, ''))} />
                 <Err k="annualIncome" />
               </label>
               {(isBusiness(form.purpose) || form.purpose === 'agriculture') && (
                 <label>
-                  {form.purpose === 'agriculture' ? 'Which activity?' : 'What is the business / activity?'}
-                  <input
-                    value={form.businessActivity}
-                    onChange={(e) => set('businessActivity', e.target.value)}
-                    placeholder={form.purpose === 'agriculture' ? 'e.g. Dairy unit, crop cultivation' : 'e.g. Furniture repair'}
-                    maxLength={120}
-                  />
+                  {form.purpose === 'agriculture' ? t('wiz.whichActivity') : t('wiz.businessActivity')}
+                  <input value={form.businessActivity} onChange={(e) => set('businessActivity', e.target.value)} maxLength={120} />
                   <Err k="businessActivity" />
                 </label>
               )}
               {isBusiness(form.purpose) && (
                 <>
                   <label>
-                    Stage <span className="opt-tag">optional</span>
+                    {t('wiz.stage')} <span className="opt-tag">{t('common.optional')}</span>
                     <select value={form.businessStage} onChange={(e) => set('businessStage', e.target.value)}>
-                      <option value="">Select…</option>
-                      <option value="idea">Idea / not started</option>
-                      <option value="existing">Running</option>
-                      <option value="expansion">Expanding</option>
+                      <option value="">{t('common.select')}</option>
+                      <option value="idea">{t('wiz.stageIdea')}</option>
+                      <option value="existing">{t('wiz.stageRunning')}</option>
+                      <option value="expansion">{t('wiz.stageExpanding')}</option>
                     </select>
                   </label>
                   <label>
-                    Business plan / project report? <span className="opt-tag">optional</span>
+                    {t('wiz.hasPlan')} <span className="opt-tag">{t('common.optional')}</span>
                     <select value={form.hasBusinessPlan} onChange={(e) => set('hasBusinessPlan', e.target.value)}>
-                      <option value="">Not sure</option>
-                      <option value="yes">Yes</option>
-                      <option value="no">No</option>
+                      <option value="">{t('common.notSure')}</option>
+                      <option value="yes">{t('common.yes')}</option>
+                      <option value="no">{t('common.no')}</option>
                     </select>
                   </label>
                 </>
               )}
               {isStudy(form.purpose) && (
                 <label>
-                  Course / programme
-                  <input
-                    value={form.educationCourse}
-                    onChange={(e) => set('educationCourse', e.target.value)}
-                    placeholder="e.g. ITI — Electrician"
-                    maxLength={120}
-                  />
+                  {t('wiz.course')}
+                  <input value={form.educationCourse} onChange={(e) => set('educationCourse', e.target.value)} maxLength={120} />
                   <Err k="educationCourse" />
                 </label>
               )}
@@ -395,76 +349,57 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
           </div>
         )}
 
-        {/* STEP 3 — money */}
         {step === 3 && (
           <div className="wizard-body">
-            <h2>The money</h2>
-            <p className="wizard-hint">
-              These are three different figures. A scheme’s “% of project cost” cap applies to the <b>project cost</b>, not
-              to your requested loan. Enter whole rupees.
-            </p>
+            <h2>{t('wiz.moneyH')}</h2>
+            <p className="wizard-hint">{t('wiz.moneyHint')}</p>
             <div className="form-grid">
               <label>
-                Total project cost (₹)
-                <input
-                  type="number" inputMode="numeric" min={1} max={MAX_RUPEES}
-                  value={form.projectCost}
-                  onChange={(e) => set('projectCost', e.target.value.replace(/[^\d]/g, ''))}
-                />
+                {t('wiz.projectCost')}
+                <input type="number" inputMode="numeric" min={1} max={MAX_RUPEES} value={form.projectCost} onChange={(e) => set('projectCost', e.target.value.replace(/[^\d]/g, ''))} />
                 <Err k="projectCost" />
               </label>
               <label>
-                Your own contribution (₹) <span className="opt-tag">optional</span>
-                <input
-                  type="number" inputMode="numeric" min={0} max={MAX_RUPEES}
-                  value={form.ownContribution}
-                  onChange={(e) => set('ownContribution', e.target.value.replace(/[^\d]/g, ''))}
-                />
+                {t('wiz.ownContribution')} <span className="opt-tag">{t('common.optional')}</span>
+                <input type="number" inputMode="numeric" min={0} max={MAX_RUPEES} value={form.ownContribution} onChange={(e) => set('ownContribution', e.target.value.replace(/[^\d]/g, ''))} />
                 <Err k="ownContribution" />
               </label>
               <label>
-                Loan you are requesting (₹)
-                <input
-                  type="number" inputMode="numeric" min={1} max={MAX_RUPEES}
-                  value={form.requestedLoan}
-                  onChange={(e) => set('requestedLoan', e.target.value.replace(/[^\d]/g, ''))}
-                />
+                {t('wiz.requestedLoan')}
+                <input type="number" inputMode="numeric" min={1} max={MAX_RUPEES} value={form.requestedLoan} onChange={(e) => set('requestedLoan', e.target.value.replace(/[^\d]/g, ''))} />
                 <Err k="requestedLoan" />
               </label>
             </div>
             {gap != null && gap > 0 && !errs.requestedLoan && (
-              <p className="inline-note warn">
-                Own contribution + loan is {inr(gap)} short of the project cost. Decide how that gap will be met.
-              </p>
+              <p className="inline-note warn">{t('wiz.gapWarn', { amount: inr(gap) })}</p>
             )}
           </div>
         )}
 
-        {/* STEP 4 — review */}
         {step === 4 && (
           <div className="wizard-body">
             {!saved ? (
               <>
-                <h2>Check your answers</h2>
+                <h2>{t('wiz.reviewH')}</h2>
                 <div className="review-grid">
-                  <div><small>Purpose</small><b>{PURPOSE_LABELS[form.purpose] ?? '—'}</b></div>
-                  <div><small>Name</small><b>{form.fullName || '—'}</b></div>
-                  <div><small>Age</small><b>{form.age || '—'}</b></div>
-                  <div><small>Category</small><b>{CATEGORY_LABELS[form.category] ?? '—'}</b></div>
-                  <div><small>Location</small><b>{[form.district, form.state].filter(Boolean).join(', ') || '—'} · {AREA_LABELS[form.areaType] ?? '—'}</b></div>
-                  <div><small>Annual income</small><b>{form.annualIncome ? inr(Number(form.annualIncome)) : '—'}</b></div>
-                  <div><small>Project cost</small><b>{form.projectCost ? inr(Number(form.projectCost)) : '—'}</b></div>
-                  <div><small>Own contribution</small><b>{form.ownContribution ? inr(Number(form.ownContribution)) : '—'}</b></div>
-                  <div><small>Requested loan</small><b>{form.requestedLoan ? inr(Number(form.requestedLoan)) : '—'}</b></div>
+                  <div><small>{t('wiz.rv.purpose')}</small><b>{L.purpose(form.purpose)}</b></div>
+                  <div><small>{t('wiz.rv.name')}</small><b>{form.fullName || '—'}</b></div>
+                  <div><small>{t('wiz.rv.age')}</small><b>{form.age || '—'}</b></div>
+                  <div><small>{t('wiz.rv.category')}</small><b>{L.category(form.category)}</b></div>
+                  <div><small>{t('wiz.rv.location')}</small><b>{[form.district, form.state].filter(Boolean).join(', ') || '—'} · {L.area(form.areaType)}</b></div>
+                  <div><small>{t('wiz.rv.income')}</small><b>{form.annualIncome ? inr(Number(form.annualIncome)) : '—'}</b></div>
+                  <div><small>{t('wiz.rv.projectCost')}</small><b>{form.projectCost ? inr(Number(form.projectCost)) : '—'}</b></div>
+                  <div><small>{t('wiz.rv.ownContribution')}</small><b>{form.ownContribution ? inr(Number(form.ownContribution)) : '—'}</b></div>
+                  <div><small>{t('wiz.rv.requestedLoan')}</small><b>{form.requestedLoan ? inr(Number(form.requestedLoan)) : '—'}</b></div>
                 </div>
                 {Object.keys(errs).length > 0 && (
                   <p className="inline-note warn" style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                    <AlertTriangle size={14} /> Fix the highlighted answer, then come back here. Use “Back” to step through.
+                    <AlertTriangle size={14} /> {t('wiz.reviewFixNote')}
                   </p>
                 )}
                 <div className="wizard-cta">
                   <Button onClick={submit} loading={update.isPending}>
-                    <Sparkles size={16} style={{ marginRight: 6 }} /> See my matching schemes
+                    <Sparkles size={16} style={{ marginRight: 6 }} /> {t('wiz.seeMatches')}
                   </Button>
                 </div>
               </>
@@ -473,17 +408,17 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
                 <div className="wizard-saved">
                   <span className="wizard-saved-icon"><Check /></span>
                   <div>
-                    <h2>Done — your profile is saved</h2>
-                    <p className="wizard-hint">Here are the documents you’ll need across your matched schemes.</p>
+                    <h2>{t('wiz.savedH')}</h2>
+                    <p className="wizard-hint">{t('wiz.savedSub')}</p>
                   </div>
                 </div>
                 <DocumentChecklist compact />
                 <div className="wizard-cta">
                   <Button onClick={() => navigate('/schemes')}>
-                    View matching schemes <IndianRupee size={15} style={{ marginLeft: 4 }} />
+                    {t('wiz.viewMatchingSchemes')} <IndianRupee size={15} style={{ marginLeft: 4 }} />
                   </Button>
                   <button className="button outline" onClick={() => navigate('/documents')}>
-                    Go to documents <ArrowRight size={15} />
+                    {t('wiz.goToDocuments')} <ArrowRight size={15} />
                   </button>
                 </div>
               </>
@@ -491,13 +426,12 @@ export function GetStarted({ navigate }: { navigate: (to: string) => void }) {
           </div>
         )}
 
-        {/* nav */}
         {!(step === 4 && saved) && (
           <div className="wizard-nav">
             <button className="button soft" onClick={() => { setErrs({}); setStep((s) => Math.max(0, s - 1)); }} disabled={step === 0}>
-              <ArrowLeft size={15} style={{ marginRight: 4 }} /> Back
+              <ArrowLeft size={15} style={{ marginRight: 4 }} /> {t('common.back')}
             </button>
-            {step < 4 && <Button onClick={next}>Continue</Button>}
+            {step < 4 && <Button onClick={next}>{t('common.continue')}</Button>}
           </div>
         )}
       </article>

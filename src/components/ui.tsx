@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRight, Check, AlertTriangle, Loader2, Sparkles, ShieldAlert, Inbox } from 'lucide-react';
 import { ApiError } from '../api/client';
+import { useLang } from '../i18n';
 
 export function Logo() {
   return (
@@ -92,39 +93,39 @@ export function PageTitle({ title, children, action }: { title: string; children
   );
 }
 
-export function Loading({ label = 'Loading…' }: { label?: string }) {
+export function Loading({ label }: { label?: string }) {
+  const { t } = useLang();
   return (
     <div className="state-block" role="status">
       <Loader2 className="spin" size={26} />
-      <span>{label}</span>
+      <span>{label ?? t('common.loading')}</span>
     </div>
   );
 }
 
 export function ErrorState({ error, onRetry }: { error: unknown; onRetry?: () => void }) {
+  const { t } = useLang();
   const api = error instanceof ApiError ? error : null;
   const forbidden = api?.isForbidden;
   const expired = api?.isAuth;
   return (
     <div className="state-block error" role="alert">
       {forbidden ? <ShieldAlert size={26} /> : <AlertTriangle size={26} />}
-      <b>
-        {expired
-          ? 'Your session has expired'
-          : forbidden
-            ? 'You do not have access to this'
-            : 'Something went wrong'}
-      </b>
-      <span>{api?.message ?? 'Please try again in a moment.'}</span>
-      {api?.requestId && <small>Reference: {api.requestId}</small>}
+      <b>{expired ? t('common.sessionExpired') : forbidden ? t('common.noAccess') : t('common.somethingWrong')}</b>
+      <span>{api?.message ?? '—'}</span>
+      {api?.requestId && (
+        <small>
+          {t('common.reference')}: {api.requestId}
+        </small>
+      )}
       {expired ? (
         <button className="button outline" onClick={() => location.reload()}>
-          Sign in again <ArrowRight size={16} />
+          {t('common.signInAgain')} <ArrowRight size={16} />
         </button>
       ) : (
         onRetry && (
           <button className="button outline" onClick={onRetry}>
-            Retry <ArrowRight size={16} />
+            {t('common.retry')} <ArrowRight size={16} />
           </button>
         )
       )}
@@ -142,22 +143,11 @@ export function EmptyState({ title, hint, icon }: { title: string; hint?: string
   );
 }
 
-export function DemoBadge({ children = 'Demonstration data' }: { children?: React.ReactNode }) {
+export function DemoBadge({ children }: { children?: React.ReactNode }) {
+  const { t } = useLang();
   return (
-    <span className="demo-badge" title="Prototype data — not an official government record">
-      <Sparkles size={12} /> {children}
+    <span className="demo-badge" title={t('disc.short')}>
+      <Sparkles size={12} /> {children ?? t('common.demoData')}
     </span>
-  );
-}
-
-export function PrototypeBanner() {
-  return (
-    <div className="prototype-banner" role="note">
-      <AlertTriangle size={15} />
-      <span>
-        <b>Prototype.</b> SchemeFit AI is a Smart India Hackathon demonstration. It is <b>not</b> an official government
-        service. Scheme rules, approvals and partner data shown here are illustrative and carry no legal effect.
-      </span>
-    </div>
   );
 }

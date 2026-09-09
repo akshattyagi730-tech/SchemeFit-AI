@@ -6,6 +6,20 @@ const dateTimeFmt = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 's
 export const formatDate = (iso?: string | null): string => (iso ? dateFmt.format(new Date(iso)) : '—');
 export const formatDateTime = (iso?: string | null): string => (iso ? dateTimeFmt.format(new Date(iso)) : '—');
 
+/** Relative time buckets — the component supplies the localised template. */
+export function relativeParts(iso?: string | null): { unit: 'now' | 'min' | 'hour' | 'day' | 'date'; n: number } {
+  if (!iso) return { unit: 'date', n: 0 };
+  const diff = Date.now() - new Date(iso).getTime();
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return { unit: 'now', n: 0 };
+  if (min < 60) return { unit: 'min', n: min };
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return { unit: 'hour', n: hr };
+  const day = Math.floor(hr / 24);
+  if (day < 7) return { unit: 'day', n: day };
+  return { unit: 'date', n: 0 };
+}
+
 export const bpsToPct = (bps: number): string => `${(bps / 100).toFixed(bps % 100 === 0 ? 0 : 2)}%`;
 
 export const PURPOSE_LABELS: Record<string, string> = {
@@ -43,16 +57,16 @@ export const CATEGORY_LABELS: Record<string, string> = {
 export const AREA_LABELS: Record<string, string> = { rural: 'Rural', urban: 'Urban', semi_urban: 'Semi-urban' };
 
 /**
- * Validate a free-text place name (state / district). Returns an error message
+ * Validate a free-text place name (state / district). Returns a translation key
  * or null. Empty is allowed here — "required" is enforced separately.
  * Allows letters (any script), digits, spaces and . , ' ( ) & / -.
  */
-export function placeError(value: string): string | null {
+export function placeErrorKey(value: string): 'v.nameTooLong' | 'v.placeLetters' | 'v.placeSymbols' | null {
   const t = value.trim();
   if (!t) return null;
-  if (t.length > 60) return 'Name is too long';
-  if (!/\p{L}/u.test(t)) return 'Enter a valid name (must contain letters)';
-  if (!/^[\p{L}\p{M}\d .,'()&/-]+$/u.test(t)) return "Use letters, spaces and . , ' - only — no other symbols";
+  if (t.length > 60) return 'v.nameTooLong';
+  if (!/\p{L}/u.test(t)) return 'v.placeLetters';
+  if (!/^[\p{L}\p{M}\d .,'()&/-]+$/u.test(t)) return 'v.placeSymbols';
   return null;
 }
 

@@ -6,14 +6,17 @@ import { useApplication, useSchemes, usePatchFinancing, useFinanceCalculation } 
 import { useActiveApplication } from '../app/active-application';
 import { useToast } from '../app/toast';
 import { ApiError } from '../api/client';
+import { useLang, useLabels } from '../i18n';
 import { calculateFinancePlan, type FinancePlan } from '../lib/finance';
-import { formatPaise, paiseToRupees, rupeesToPaise, bpsToPct } from '../lib/format';
+import { formatPaise, paiseToRupees, bpsToPct } from '../lib/format';
 
 export function LoanPlanner({ navigate }: { navigate: (to: string) => void }) {
-  const { active, activeId, isLoading: appsLoading } = useActiveApplication();
+  const { activeId, isLoading: appsLoading } = useActiveApplication();
   const { data: application, isLoading, isError, error, refetch } = useApplication(activeId ?? undefined);
   const { data: schemes } = useSchemes();
   const { toast, errorToast } = useToast();
+  const { t } = useLang();
+  const L = useLabels();
 
   const scheme = useMemo(
     () => schemes?.find((s) => s.code === application?.schemeCode),
@@ -37,17 +40,14 @@ export function LoanPlanner({ navigate }: { navigate: (to: string) => void }) {
     setMoratorium(f.moratoriumMonths ?? 0);
   }, [application?.id, scheme?.code]);
 
-  if (appsLoading || isLoading) return <Loading label="Loading your loan plan…" />;
+  if (appsLoading || isLoading) return <Loading label={t('lp.computing')} />;
   if (!activeId)
     return (
       <>
-        <PageTitle title="Smart Loan Planner">Model your repayment for a scheme you’ve started an application for.</PageTitle>
-        <EmptyState
-          title="No application selected"
-          hint="Start an application from Scheme Matches, then return here to model the repayment."
-        />
+        <PageTitle title={t('lp.title')}>{t('lp.intro')}</PageTitle>
+        <EmptyState title={t('lp.noApplication')} hint={t('lp.noApplicationHint')} />
         <div style={{ marginTop: 12 }}>
-          <Button onClick={() => navigate('/schemes')}>Go to Scheme Matches</Button>
+          <Button onClick={() => navigate('/schemes')}>{t('pr.goToSchemeMatches')}</Button>
         </div>
       </>
     );
@@ -83,7 +83,7 @@ export function LoanPlanner({ navigate }: { navigate: (to: string) => void }) {
       },
     });
   } catch (e) {
-    planError = e instanceof Error ? e.message : 'Cannot compute a plan for these inputs.';
+    planError = e instanceof Error ? e.message : t('lp.cannotCompute');
   }
 
   const rateOptions = rateStops(scheme.terms.minInterestRateBps, scheme.terms.maxInterestRateBps);
@@ -100,9 +100,9 @@ export function LoanPlanner({ navigate }: { navigate: (to: string) => void }) {
         tenureMonths: tenure,
         moratoriumMonths: moratorium,
       });
-      toast('Financial plan saved to your application.');
+      toast(t('lp.savedToast'));
     } catch (err) {
-      errorToast(err instanceof ApiError ? err.message : 'Could not save the plan.');
+      errorToast(err instanceof ApiError ? err.message : t('lp.couldNotSave'));
     }
   }
 
@@ -119,9 +119,9 @@ export function LoanPlanner({ navigate }: { navigate: (to: string) => void }) {
       });
       setServerPlan(p);
       const matches = p.monthlyInstalmentPaise === plan?.monthlyInstalmentPaise;
-      toast(matches ? 'Server calculation matches the preview exactly.' : 'Server returned a different figure — see below.');
+      toast(matches ? t('lp.serverMatchesToast') : t('lp.serverDiffersToast'));
     } catch (err) {
-      errorToast(err instanceof ApiError ? err.message : 'Server calculation failed.');
+      errorToast(err instanceof ApiError ? err.message : t('lp.serverCalcFailed'));
     }
   }
 
@@ -134,25 +134,20 @@ export function LoanPlanner({ navigate }: { navigate: (to: string) => void }) {
 
   return (
     <>
-      <PageTitle title="Smart Loan Planner">
-        {application.reference} · {scheme.name}. Every figure below is computed from your inputs — nothing is pre-set.
-      </PageTitle>
+      <PageTitle title={t('lp.title')}>{t('lp.introRef', { ref: application.reference, scheme: scheme.name })}</PageTitle>
 
       {!editable && (
-        <div className="prototype-banner" style={{ marginBottom: 14 }}>
+        <div className="inline-callout" style={{ marginBottom: 14 }}>
           <AlertTriangle size={15} />
-          <span>
-            This application is <b>{application.status}</b>. The plan is read-only; the figures shown are the snapshot saved
-            at submission.
-          </span>
+          <span>{t('lp.readonlyNote', { status: L.status(application.status) })}</span>
         </div>
       )}
 
       <div className="planner-grid">
         <article className="card planner-inputs">
-          <h2>Plan your loan</h2>
+          <h2>{t('lp.inputs')}</h2>
           <label>
-            Loan amount <b>{formatPaise(amount)}</b>
+            {t('lp.loanAmount')} <b>{formatPaise(amount)}</b>
             <input
               type="range"
               min={scheme.financing.minAmountPaise}
@@ -167,31 +162,31 @@ export function LoanPlanner({ navigate }: { navigate: (to: string) => void }) {
             </span>
           </label>
           <label>
-            Repayment tenure
+            {t('lp.repaymentTenure')}
             <select value={tenure} disabled={!editable} onChange={(e) => setTenure(+e.target.value)}>
               {tenureOptions.map((m) => (
                 <option key={m} value={m}>
-                  {m} months
+                  {m} {t('common.months')}
                 </option>
               ))}
             </select>
           </label>
           <label>
-            Interest rate
+            {t('lp.interestRate')}
             <select value={rateBps} disabled={!editable} onChange={(e) => setRateBps(+e.target.value)}>
               {rateOptions.map((b) => (
                 <option key={b} value={b}>
-                  {bpsToPct(b)} annually
+                  {bpsToPct(b)} {t('lp.annually')}
                 </option>
               ))}
             </select>
           </label>
           <label>
-            Moratorium period
+            {t('lp.moratoriumPeriod')}
             <select value={moratorium} disabled={!editable || !scheme.terms.moratorium.allowed} onChange={(e) => setMoratorium(+e.target.value)}>
               {moratoriumOptions.map((m) => (
                 <option key={m} value={m}>
-                  {m ? `${m} months` : 'No moratorium'}
+                  {m ? `${m} ${t('common.months')}` : t('lp.noMoratorium')}
                 </option>
               ))}
             </select>
@@ -200,57 +195,57 @@ export function LoanPlanner({ navigate }: { navigate: (to: string) => void }) {
           <div className="smart-insight">
             <Sparkles />
             <span>
-              <b>Scheme financing cap</b>
-              This scheme funds up to {scheme.financing.maxProjectCostSharePct}% of your {formatPaise(projectCost)} project
-              cost — {formatPaise(plan?.schemeFinancingCapPaise ?? 0)}. You’ve requested {formatPaise(amount)}.
-              {scheme.terms.moratorium.allowed && (
-                <>
-                  {' '}
-                  Moratorium interest is <b>{scheme.terms.moratorium.interestHandling}</b> and the tenure{' '}
-                  {scheme.terms.moratorium.tenureIncludesMoratorium ? 'includes' : 'excludes'} it.
-                </>
-              )}
+              <b>{t('lp.schemeCap')}</b>
+              {t('lp.schemeCapInsight', {
+                pct: scheme.financing.maxProjectCostSharePct,
+                cost: formatPaise(projectCost),
+                cap: formatPaise(plan?.schemeFinancingCapPaise ?? 0),
+                req: formatPaise(amount),
+              })}
             </span>
           </div>
 
           {editable && (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <Button onClick={save} loading={patch.isPending}>
-                Save Financial Plan
+                {t('lp.saveFinancialPlan')}
               </Button>
               <button className="button outline" onClick={verify} disabled={serverCalc.isPending}>
-                Verify against server <Info size={16} />
+                {t('lp.verifyServer')} <Info size={16} />
               </button>
             </div>
           )}
         </article>
 
         <article className="card loan-results">
-          <h2>Your estimate</h2>
+          <h2>{t('lp.yourEstimate')}</h2>
           {planError ? (
             <div className="inline-note warn">{planError}</div>
           ) : plan ? (
             <>
               <div className="result-main">
-                <span>Illustrative monthly EMI</span>
+                <span>{t('lp.illustrativeEmi')}</span>
                 <b>{formatPaise(plan.monthlyInstalmentPaise)}</b>
                 <small>
-                  {bpsToPct(rateBps)} · {plan.repaymentMonths} EMIs
-                  {moratorium ? ` · ${moratorium}-month moratorium` : ''} · final instalment{' '}
-                  {formatPaise(plan.finalInstalmentPaise)}
+                  {t('lp.emiSub', {
+                    rate: bpsToPct(rateBps),
+                    n: plan.repaymentMonths,
+                    mor: moratorium ? t('lp.morSuffix', { n: moratorium }) : '',
+                    final: formatPaise(plan.finalInstalmentPaise),
+                  })}
                 </small>
               </div>
               <div className="results-row">
                 <div>
-                  <span>Total interest</span>
+                  <span>{t('lp.totalInterest')}</span>
                   <b>{formatPaise(plan.totalInterestPaise)}</b>
                 </div>
                 <div>
-                  <span>Total repayment</span>
+                  <span>{t('lp.totalRepayment')}</span>
                   <b>{formatPaise(plan.totalRepaymentPaise)}</b>
                 </div>
                 <div>
-                  <span>Moratorium interest</span>
+                  <span>{t('lp.moratoriumInterest')}</span>
                   <b>{formatPaise(plan.moratoriumInterestPaise)}</b>
                 </div>
               </div>
@@ -267,10 +262,10 @@ export function LoanPlanner({ navigate }: { navigate: (to: string) => void }) {
                 </ResponsiveContainer>
                 <div>
                   <span>
-                    <i className="dot green" /> Principal
+                    <i className="dot green" /> {t('lp.principal')}
                   </span>
                   <span>
-                    <i className="dot mint" /> Interest
+                    <i className="dot mint" /> {t('lp.interestCol')}
                   </span>
                 </div>
               </div>
@@ -287,7 +282,7 @@ export function LoanPlanner({ navigate }: { navigate: (to: string) => void }) {
               )}
               {plan.assumptions.length > 0 && (
                 <div className="inline-note">
-                  <b>Assumptions:</b>
+                  <b>{t('lp.assumptionsLabel')}</b>
                   <br />
                   {plan.assumptions.map((a, i) => (
                     <span key={i}>
@@ -300,9 +295,9 @@ export function LoanPlanner({ navigate }: { navigate: (to: string) => void }) {
 
               {serverPlan && (
                 <div className="inline-note" style={{ borderTop: '1px solid #e6eef2', paddingTop: 8 }}>
-                  <b>Server (authoritative):</b> EMI {formatPaise(serverPlan.monthlyInstalmentPaise)} · total interest{' '}
-                  {formatPaise(serverPlan.totalInterestPaise)}{' '}
-                  {serverPlan.monthlyInstalmentPaise === plan.monthlyInstalmentPaise ? '— matches ✓' : '— differs ✗'}
+                  <b>{t('lp.serverAuthoritative')}</b> EMI {formatPaise(serverPlan.monthlyInstalmentPaise)} ·{' '}
+                  {t('lp.totalInterest')} {formatPaise(serverPlan.totalInterestPaise)}{' '}
+                  {serverPlan.monthlyInstalmentPaise === plan.monthlyInstalmentPaise ? '✓' : '✗'}
                 </div>
               )}
             </>
@@ -313,17 +308,17 @@ export function LoanPlanner({ navigate }: { navigate: (to: string) => void }) {
       {plan && plan.amortizationSchedule.length > 0 && (
         <article className="card schedule">
           <div className="card-head">
-            <h2>Amortization schedule</h2>
-            <span>First 12 of {plan.amortizationSchedule.length} instalments</span>
+            <h2>{t('lp.scheduleTitle')}</h2>
+            <span>{t('lp.scheduleSub', { n: plan.amortizationSchedule.length })}</span>
           </div>
           <table>
             <thead>
               <tr>
                 <th>#</th>
                 <th>EMI</th>
-                <th>Principal</th>
-                <th>Interest</th>
-                <th>Balance</th>
+                <th>{t('lp.principal')}</th>
+                <th>{t('lp.interestCol')}</th>
+                <th>{t('lp.balance')}</th>
               </tr>
             </thead>
             <tbody>
