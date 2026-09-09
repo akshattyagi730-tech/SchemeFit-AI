@@ -370,7 +370,7 @@ export const schemes = [
       { type: 'business_proof', label: 'Enterprise ownership proof' },
       { type: 'project_report', label: 'Project report' },
     ],
-    source: DEMO_SOURCE('https://www.sidbi.in/'),
+    source: DEMO_SOURCE('https://www.udyamimitra.in/'),
     status: 'active',
   },
   {
@@ -604,7 +604,7 @@ export const schemes = [
       { type: 'bank_statement', label: 'Bank statement (last 3 months)' },
       { type: 'address_proof', label: 'Address proof' },
     ],
-    source: DEMO_SOURCE(''),
+    source: DEMO_SOURCE('https://www.jansamarth.in/'),
     status: 'active',
   },
 
@@ -865,7 +865,7 @@ export const schemes = [
       { type: 'itr', label: 'Income-tax returns (last 2 years)' },
       { type: 'bank_statement', label: 'Bank statement (last 12 months)' },
     ],
-    source: DEMO_SOURCE(''),
+    source: DEMO_SOURCE('https://www.jansamarth.in/'),
     status: 'active',
   },
   {
@@ -891,7 +891,7 @@ export const schemes = [
       { type: 'stock_statement', label: 'Stock & receivables statement' },
       { type: 'bank_statement', label: 'Bank statement (last 12 months)' },
     ],
-    source: DEMO_SOURCE(''),
+    source: DEMO_SOURCE('https://www.jansamarth.in/'),
     status: 'active',
   },
   {
@@ -917,7 +917,7 @@ export const schemes = [
       { type: 'itr', label: 'Income-tax returns (last 2-3 years)' },
       { type: 'collateral_documents', label: 'Collateral / security documents' },
     ],
-    source: DEMO_SOURCE(''),
+    source: DEMO_SOURCE('https://www.jansamarth.in/'),
     status: 'active',
   },
   {
@@ -970,7 +970,7 @@ export const schemes = [
       { type: 'co_applicant_kyc', label: 'Co-applicant KYC & income proof' },
       { type: 'collateral_documents', label: 'Collateral documents (above threshold)', optional: true },
     ],
-    source: DEMO_SOURCE(''),
+    source: DEMO_SOURCE('https://www.vidyalakshmi.co.in/'),
     status: 'active',
   },
   {
@@ -1019,7 +1019,7 @@ export const schemes = [
       { type: 'income_proof', label: 'Income proof / existing route earnings' },
       { type: 'bank_statement', label: 'Bank statement (last 6 months)' },
     ],
-    source: DEMO_SOURCE(''),
+    source: DEMO_SOURCE('https://www.jansamarth.in/'),
     status: 'active',
   },
   {
@@ -1070,7 +1070,7 @@ export const schemes = [
       { type: 'property_documents', label: 'Property agreement & title documents' },
       { type: 'bank_statement', label: 'Bank statement (last 12 months)' },
     ],
-    source: DEMO_SOURCE(''),
+    source: DEMO_SOURCE('https://pmay-urban.gov.in/'),
     status: 'active',
   },
 ] as const;

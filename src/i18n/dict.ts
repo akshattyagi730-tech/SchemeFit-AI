@@ -291,7 +291,7 @@ export const dict = {
   'sm.compareTitle': { en: 'Compare Scheme Options', hi: 'योजना विकल्पों की तुलना' },
   'sm.compareSub': { en: 'Eligibility, suitability score and financing terms side by side. Suitability is a ranking, not an approval odds.', hi: 'पात्रता, उपयुक्तता स्कोर और वित्तीय शर्तें साथ-साथ। उपयुक्तता एक क्रम है, स्वीकृति की संभावना नहीं।' },
   'sm.officialPortal': { en: 'Official portal', hi: 'आधिकारिक पोर्टल' },
-  'sm.officialSoon': { en: 'Official link coming soon', hi: 'आधिकारिक लिंक जल्द आ रहा है' },
+  'sm.officialSoon': { en: 'Apply directly at any bank branch', hi: 'किसी भी बैंक शाखा में सीधे आवेदन करें' },
   'sm.col.scheme': { en: 'Scheme', hi: 'योजना' },
   'sm.col.eligibility': { en: 'Eligibility', hi: 'पात्रता' },
   'sm.col.suitability': { en: 'Suitability', hi: 'उपयुक्तता' },
