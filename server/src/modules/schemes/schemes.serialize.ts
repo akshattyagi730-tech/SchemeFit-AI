@@ -35,6 +35,11 @@ export function serializeScheme(s: SchemeDoc) {
       version: o.source?.version ?? 'demo-1',
       demoData: o.source?.demoData ?? true,
     },
+    // Convenience alias of source.url: the official / authorised government portal
+    // for this scheme (HTTPS). null when no single official portal applies
+    // (e.g. generic bank products). Never a demo or placeholder URL.
+    officialUrl:
+      o.source?.url && /^https:\/\//i.test(o.source.url) ? o.source.url : null,
     // Explicit, machine-readable label so the UI can badge unverified rules.
     dataClassification: o.source?.demoData ? 'demonstration-data' : 'verified',
     status: o.status,

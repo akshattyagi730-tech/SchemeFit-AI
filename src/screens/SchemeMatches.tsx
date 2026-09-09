@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, X, CheckCircle2, AlertTriangle, CircleHelp } from 'lucide-react';
+import { Sparkles, X, CheckCircle2, AlertTriangle, CircleHelp, ExternalLink } from 'lucide-react';
 import { PageTitle, Button, ScoreRing, StatusPill, Loading, ErrorState, EmptyState, DemoBadge } from '../components/ui';
 import { DocumentChecklist } from '../components/DocumentChecklist';
 import { useRecommendations, useCreateApplication, useApplications } from '../api/hooks';
@@ -9,6 +9,22 @@ import { ApiError } from '../api/client';
 import { useLang, type TFn } from '../i18n';
 import { formatPaise, bpsToPct } from '../lib/format';
 import type { Recommendation } from '../api/types';
+
+/** Link to the scheme's official / authorised government portal (opens a new tab). */
+function OfficialPortalLink({ url, t }: { url: string | null; t: TFn }) {
+  if (url) {
+    return (
+      <a className="official-link" href={url} target="_blank" rel="noopener noreferrer">
+        {t('sm.officialPortal')} <ExternalLink size={12} />
+      </a>
+    );
+  }
+  return (
+    <span className="official-link disabled" aria-disabled="true">
+      {t('sm.officialSoon')}
+    </span>
+  );
+}
 
 function ConditionList({ items, outcome }: { items: { key: string; label: string; detail: string }[]; outcome: string }) {
   if (!items.length) return null;
@@ -136,6 +152,7 @@ export function SchemeMatches({ navigate }: { navigate: (to: string) => void }) 
                   <div>
                     <b>{t('sm.whyNoMatch')}</b>
                     <ConditionList items={r.eligibility.failed} outcome="failed" />
+                    <OfficialPortalLink url={r.scheme.officialUrl} t={t} />
                   </div>
                 </div>
               </article>
@@ -175,6 +192,7 @@ function SchemeCard({ rec, onStart, started, needsInfo, t }: { rec: Recommendati
             {s.name} {s.source.demoData && <DemoBadge />}
           </h2>
           <p>{s.program}</p>
+          <OfficialPortalLink url={s.officialUrl} t={t} />
         </div>
         {rec.suitability && <ScoreRing score={score} />}
       </div>

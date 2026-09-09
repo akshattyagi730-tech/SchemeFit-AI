@@ -211,3 +211,14 @@ footer { flex-wrap: wrap; }
 
 .inline-callout { display: flex; align-items: flex-start; gap: 10px; background: #eef7fb; border: 1px solid #cfe6f2; color: #23557a; padding: 10px 14px; font-size: 12px; line-height: 1.45; border-radius: 8px; }
 .inline-callout > svg { color: #2f80b4; flex: none; margin-top: 2px; }
+
+/* ---- Official portal link on scheme cards ---- */
+.official-link {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 6px; font-size: 11px; font-weight: 700; color: #0067d8;
+  text-decoration: none;
+}
+.official-link:hover { text-decoration: underline; }
+.official-link.disabled { color: #9aa9c2; font-weight: 600; cursor: default; }
+.official-link svg { flex: none; }
+.why .official-link { margin-top: 10px; }

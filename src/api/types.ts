@@ -89,6 +89,8 @@ export interface Scheme {
   };
   requiredDocuments: { type: string; label: string; optional?: boolean }[];
   source: { url: string; version: string; demoData: boolean; verificationDate: string | null };
+  /** Official / authorised government portal for this scheme (HTTPS), or null when none applies. */
+  officialUrl: string | null;
   dataClassification: 'demonstration-data' | 'verified';
   status: 'active' | 'archived';
 }

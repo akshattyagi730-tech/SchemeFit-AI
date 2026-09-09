@@ -317,7 +317,7 @@ export const schemes = [
       { type: 'income_certificate', label: 'Income certificate' },
       { type: 'project_report', label: 'Project report' },
     ],
-    source: DEMO_SOURCE('https://nhfdc.nic.in/'),
+    source: DEMO_SOURCE('https://ndfdc.nic.in/'),
     status: 'active',
   },
   {
@@ -634,7 +634,7 @@ export const schemes = [
       { type: 'project_report', label: 'Detailed project report' },
       { type: 'bank_statement', label: 'Bank statement (last 6 months)' },
     ],
-    source: DEMO_SOURCE('https://nstfdc.nic.in/'),
+    source: DEMO_SOURCE('https://nstfdc.tribal.gov.in/'),
     status: 'active',
   },
   {
