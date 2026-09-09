@@ -88,7 +88,7 @@ role-selection screen only chooses where you land — it never grants a role.
 | `SESSION_SECRET` | — (required, ≥32 chars) | session token hashing salt/secret |
 | `SESSION_TTL_HOURS` | `168` | session lifetime |
 | `COOKIE_SECURE` | `false` (forced `true` in prod / when SameSite=none) | `Secure` cookie flag |
-| `COOKIE_SAMESITE` | `lax` | `lax` \| `strict` \| `none`. Use `none` when the SPA and API are on different sites (split deploy). |
+| `COOKIE_SAMESITE` | `lax` | `lax` \| `strict` \| `none`. `lax` works when the web host proxies `/api` to the API (recommended). |
 | `COOKIE_DOMAIN` | empty | optional cookie domain |
 | `LOGIN_RATE_MAX` / `LOGIN_RATE_WINDOW_MINUTES` | `5` / `15` | login rate limit |
 | `STORAGE_DRIVER` | `local` | `local` \| `s3` |
@@ -101,10 +101,10 @@ role-selection screen only chooses where you land — it never grants a role.
 `CLIENT_ORIGIN` accepts a comma-separated allow-list for prod + preview URLs.
 
 The frontend needs no env for local dev (Vite proxies `/api` → `localhost:4000`).
-For a **split deployment**, set `VITE_API_BASE_URL` to the API origin at build
-time (the client appends `/api/v1`), and set `CLIENT_ORIGIN` + `COOKIE_SAMESITE=none`
-on the backend. **Full walkthrough: [`DEPLOYMENT.md`](DEPLOYMENT.md)** (MongoDB
-Atlas + Render + Vercel).
+In production the web host proxies `/api` to the API service (see `vercel.json`)
+so the app always calls `/api` on its own origin and cookies stay first-party —
+this is what makes it work on mobile. **Full walkthrough:
+[`DEPLOYMENT.md`](DEPLOYMENT.md)** (MongoDB Atlas + Render + Vercel).
 
 ---
 

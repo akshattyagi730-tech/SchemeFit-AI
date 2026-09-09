@@ -31,7 +31,11 @@ services:
       - key: SESSION_SECRET
         generateValue: true # Render generates a strong value once and keeps it
       - key: COOKIE_SAMESITE
-        value: none # web app and API are on different sites → cross-site cookies
+        # 'lax' works because the web app proxies /api to this service, so the
+        # browser treats the session/CSRF cookies as first-party (see vercel.json
+        # rewrites). Use 'none' only if you call this API from a genuinely
+        # different origin — mobile browsers then block the cookie.
+        value: lax
       # ---- set these in the Render dashboard / blueprint prompts ----
       - key: MONGO_URL
         sync: false # e.g. mongodb+srv://user:pass@cluster0.xxxx.mongodb.net/schemefit?retryWrites=true&w=majority

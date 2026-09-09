@@ -7,14 +7,14 @@
  *  - Errors are normalised to `ApiError` ({ status, code, message, fieldErrors }).
  *  - No auth token or password is ever stored in localStorage.
  *
- * Base URL:
- *  - dev / same-origin deploy: leave VITE_API_BASE_URL unset → uses '/api/v1'
- *    (Vite proxies it in dev; a reverse proxy handles it in prod).
- *  - split deploy (e.g. web on Vercel, API on Render): set
- *    VITE_API_BASE_URL=https://your-api.onrender.com at build time.
+ * Base URL is ALWAYS relative ('/api/v1'). The API must be reachable at the same
+ * origin as the app so the session + CSRF cookies are first-party — mobile
+ * browsers block third-party cookies. In dev, Vite proxies /api → localhost:4000
+ * (vite.config.ts). In production, the host proxies /api → the API service
+ * (vercel.json rewrites to the Render URL). Never point this at a different
+ * origin.
  */
-const API_ORIGIN = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '');
-export const API_BASE = `${API_ORIGIN}/api/v1`;
+export const API_BASE = '/api/v1';
 
 export interface FieldError {
   path: string;

@@ -145,13 +145,14 @@ live in Mongo).
 ### Deployment (MongoDB Atlas + Render + Vercel)
 - Full step-by-step in the repo-root **`DEPLOYMENT.md`**. `render.yaml` (API
   blueprint), `vercel.json` (web app) and `server/Dockerfile` are included.
-- Cross-site cookies: `COOKIE_SAMESITE=none` makes the session + CSRF cookies
-  `SameSite=None; Secure` so the SPA (Vercel) and API (Render) can be on
-  different sites. `CLIENT_ORIGIN` accepts a comma-separated allow-list (prod +
-  preview URLs); a disallowed origin gets no CORS headers (no 500, verified by
-  `tests/integration/cors.test.ts`).
-- Frontend API base URL is build-time configurable via `VITE_API_BASE_URL`
-  (origin only; the client appends `/api/v1`). Unset ⇒ same-origin `/api/v1`.
+- Same-origin by design: the web host proxies `/api` → the API service
+  (`vercel.json` rewrites `/api/*` to the Render URL), so the browser always
+  sees `/api` as first-party and the session + CSRF cookies work on mobile
+  (third-party cookies are blocked by default on Safari / Samsung Internet /
+  Firefox). `COOKIE_SAMESITE=lax` is enough. `COOKIE_SAMESITE=none` +
+  `CLIENT_ORIGIN` allow-list still supported for a genuine cross-origin caller.
+- Frontend always calls the relative path `/api/v1` — never a configurable
+  absolute origin.
 - `SEED_ON_BOOT=true` runs the idempotent seed once, only when the users
   collection is empty — for a one-shot demo deploy with no shell access. The
   seed logic is now importable (`src/seed/run.ts` → `seedDatabase()`); the CLI
