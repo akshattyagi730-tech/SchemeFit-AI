@@ -332,10 +332,51 @@ export interface DocumentInfo {
   reviewStatus: 'uploaded' | 'under_review' | 'verified' | 'changes_requested';
   reviewFeedback: string;
   reviewedAt: string | null;
-  reviewHistory: { status: string; feedback: string; at: string }[];
+  reviewHistory: { status: string; feedback: string; system?: boolean; at: string }[];
+  source: 'manual' | 'digilocker';
+  issuedBy: string | null;
+  authenticity: DocumentAuthenticity | null;
   downloadUrl: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export type DocTrustLevel =
+  | 'issuer_verified'
+  | 'e_signed'
+  | 'signed_untrusted'
+  | 'self_signed'
+  | 'invalid'
+  | 'unsigned'
+  | 'not_applicable';
+
+export interface DocumentAuthenticity {
+  method: 'none' | 'pdf_signature' | 'digilocker_api';
+  trustLevel: DocTrustLevel;
+  authority: string | null;
+  signerName: string | null;
+  issuerName: string | null;
+  signedAt: string | null;
+  systemVerified: boolean;
+  summary: string;
+}
+
+export interface DigiLockerStatus {
+  connected: boolean;
+  provider: 'mock' | 'live';
+  name: string | null;
+  maskedAadhaar: string | null;
+  connectedAt: string | null;
+}
+
+export interface DigiLockerIssuedDoc {
+  uri: string;
+  name: string;
+  docTypeCode: string;
+  issuer: string;
+  mime: 'application/pdf';
+  sizeBytes: number;
+  mapsTo: string | null;
 }
 
 export interface DocumentsResponse {

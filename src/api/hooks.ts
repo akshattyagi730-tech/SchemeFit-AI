@@ -9,6 +9,8 @@ import type {
   AdminKpis,
   Application,
   DocumentChecklistResponse,
+  DigiLockerIssuedDoc,
+  DigiLockerStatus,
   DocumentsResponse,
   Envelope,
   FinancePlan,
@@ -35,6 +37,8 @@ export const qk = {
   application: (id: string) => ['application', id] as const,
   documents: (appId: string) => ['documents', appId] as const,
   notifications: ['notifications'] as const,
+  digilockerStatus: ['digilocker', 'status'] as const,
+  digilockerIssued: ['digilocker', 'issued'] as const,
   partnerSummary: ['partner', 'summary'] as const,
   partnerApplications: (q: string) => ['partner', 'applications', q] as const,
   adminKpis: ['admin', 'kpis'] as const,
@@ -278,6 +282,59 @@ export function useReviewDocument(appId: string) {
       qc.invalidateQueries({ queryKey: qk.documents(appId) });
       qc.invalidateQueries({ queryKey: qk.application(appId) });
       qc.invalidateQueries({ queryKey: ['partner'] });
+      qc.invalidateQueries({ queryKey: qk.notifications });
+      qc.invalidateQueries({ queryKey: qk.documentChecklist });
+    },
+  });
+}
+
+/* ------------------------------ digilocker ----------------------------- */
+
+export function useDigiLockerStatus() {
+  return useQuery({
+    queryKey: qk.digilockerStatus,
+    queryFn: () => unwrap(api.get<Envelope<DigiLockerStatus>>('/digilocker/status')),
+    staleTime: 30_000,
+  });
+}
+
+export function useDigiLockerConnect() {
+  return useMutation({
+    mutationFn: () => unwrap(api.post<Envelope<{ authorizeUrl: string }>>('/digilocker/connect')),
+    onSuccess: ({ authorizeUrl }) => {
+      window.location.assign(authorizeUrl);
+    },
+  });
+}
+
+export function useDigiLockerDisconnect() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post('/digilocker/disconnect'),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.digilockerStatus });
+      qc.invalidateQueries({ queryKey: qk.digilockerIssued });
+    },
+  });
+}
+
+export function useDigiLockerIssued(enabled: boolean) {
+  return useQuery({
+    queryKey: qk.digilockerIssued,
+    queryFn: () => unwrap(api.get<Envelope<{ documents: DigiLockerIssuedDoc[]; provider: string }>>('/digilocker/issued')),
+    enabled,
+  });
+}
+
+export function useDigiLockerImport(appId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ uri, docType }: { uri: string; docType: string }) =>
+      api.post(`/digilocker/import`, { applicationId: appId, uri, docType }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: qk.documents(appId) });
+      qc.invalidateQueries({ queryKey: qk.application(appId) });
+      qc.invalidateQueries({ queryKey: ['applications'] });
       qc.invalidateQueries({ queryKey: qk.notifications });
       qc.invalidateQueries({ queryKey: qk.documentChecklist });
     },
