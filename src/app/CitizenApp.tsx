@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Bell, Check, ClipboardList, LogOut, Menu, Search, UserRound, X } from 'lucide-react';
+import { Bell, Check, ClipboardList, LogOut, Menu, Mic, Search, Sparkles, UserRound, X } from 'lucide-react';
 import { Logo } from '../components/ui';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { PrototypeBanner } from '../components/PrototypeBanner';
@@ -67,17 +67,35 @@ const initialsOf = (name: string) =>
     .slice(0, 2)
     .toUpperCase();
 
-/** Header search: matches navigation pages and scheme names, click to open. */
+type SpeechRec = {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  start: () => void;
+  stop: () => void;
+  onresult: ((e: { results: Array<Array<{ transcript: string }>> }) => void) | null;
+  onend: (() => void) | null;
+  onerror: (() => void) | null;
+};
+const SpeechRecognitionCtor = (): (new () => SpeechRec) | null => {
+  const w = window as unknown as { SpeechRecognition?: new () => SpeechRec; webkitSpeechRecognition?: new () => SpeechRec };
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
+};
+
+/** Header search: pages + scheme names, with quick prompts and voice input. */
 function SearchBox({ navigate, items }: { navigate: (to: string) => void; items: NavItem[] }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { data: schemes } = useSchemes();
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
+  const [listening, setListening] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const recRef = useRef<SpeechRec | null>(null);
   useDismiss(ref, () => setOpen(false));
 
   const canOpenSchemes = items.some((i) => i.route === '/schemes');
   const query = q.trim().toLowerCase();
+
   const { pages, matchedSchemes } = useMemo(() => {
     if (!query) return { pages: [] as NavItem[], matchedSchemes: [] as NonNullable<typeof schemes> };
     const pages = items.filter((i) => t(i.labelKey).toLowerCase().includes(query));
@@ -94,13 +112,48 @@ function SearchBox({ navigate, items }: { navigate: (to: string) => void; items:
     return { pages, matchedSchemes };
   }, [query, items, schemes, t, canOpenSchemes]);
 
+  // Quick prompts built from live data, so every one resolves to results.
+  const prompts = useMemo(() => {
+    const nav = items.filter((i) => i.route !== '/').slice(0, 3).map((i) => t(i.labelKey));
+    const scheme = (schemes ?? []).slice(0, 2).map((s) => s.name.split(/[—(]/)[0]!.trim());
+    return [...nav, ...scheme].filter(Boolean).slice(0, 5);
+  }, [items, schemes, t]);
+
   const go = (to: string) => {
     setQ('');
     setOpen(false);
     navigate(to);
   };
 
+  const speechCtor = SpeechRecognitionCtor();
+  const startVoice = () => {
+    const Ctor = speechCtor;
+    if (!Ctor) return;
+    if (listening) {
+      recRef.current?.stop();
+      return;
+    }
+    const rec = new Ctor();
+    recRef.current = rec;
+    rec.lang = lang === 'hi' ? 'hi-IN' : 'en-IN';
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    rec.onresult = (e) => {
+      const text = e.results?.[0]?.[0]?.transcript ?? '';
+      if (text) {
+        setQ(text);
+        setOpen(true);
+      }
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    setListening(true);
+    rec.start();
+  };
+  useEffect(() => () => recRef.current?.stop(), []);
+
   const total = pages.length + matchedSchemes.length;
+  const showPrompts = open && query.length === 0 && prompts.length > 0;
 
   return (
     <div className="search-box" ref={ref}>
@@ -112,9 +165,38 @@ function SearchBox({ navigate, items }: { navigate: (to: string) => void; items:
           setOpen(true);
         }}
         onFocus={() => setOpen(true)}
-        placeholder={t('header.searchPlaceholder')}
+        placeholder={listening ? t('header.listening') : t('header.searchPlaceholder')}
         aria-label={t('header.searchPlaceholder')}
       />
+      {speechCtor && (
+        <button
+          type="button"
+          className={`search-mic ${listening ? 'on' : ''}`}
+          onClick={startVoice}
+          aria-label={t('header.voiceSearch')}
+          title={t('header.voiceSearch')}
+        >
+          <Mic size={17} />
+        </button>
+      )}
+
+      {showPrompts && (
+        <div className="search-results">
+          <div className="search-group">
+            <small>
+              <Sparkles size={11} /> {t('header.searchTry')}
+            </small>
+            <div className="search-prompts">
+              {prompts.map((p) => (
+                <button key={p} className="search-prompt" onClick={() => setQ(p)}>
+                  {p}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {open && query.length > 0 && (
         <div className="search-results">
           {total === 0 && <div className="search-empty">{t('header.searchEmpty', { q: q.trim() })}</div>}
