@@ -65,7 +65,7 @@ export const dict = {
   'header.searchPagesGroup': { en: 'Pages', hi: 'पेज' },
   'header.searchSchemesGroup': { en: 'Schemes', hi: 'योजनाएँ' },
   'header.signOut': { en: 'Sign out', hi: 'साइन आउट' },
-  'header.signOutConfirm': { en: 'Sign out of SchemeFit AI?', hi: 'SchemeFit AI से साइन आउट करें?' },
+  'header.signOutConfirm': { en: 'Sign out of SchemeFit?', hi: 'SchemeFit से साइन आउट करें?' },
   'header.signedOut': { en: 'You have been signed out.', hi: 'आप साइन आउट हो गए हैं।' },
   'header.account': { en: 'Account', hi: 'खाता' },
   'header.menu': { en: 'Menu', hi: 'मेन्यू' },
@@ -95,7 +95,7 @@ export const dict = {
   'auth.point1': { en: 'Scheme-fit recommendations', hi: 'योजना-अनुरूप सुझाव' },
   'auth.point2': { en: 'Document readiness checks', hi: 'दस्तावेज़ तैयारी जाँच' },
   'auth.point3': { en: 'Smarter partner routing', hi: 'बेहतर साझेदार रूटिंग' },
-  'auth.welcome': { en: 'WELCOME TO SCHEMEFIT AI', hi: 'SchemeFit AI में आपका स्वागत है' },
+  'auth.welcome': { en: 'WELCOME TO SCHEMEFIT', hi: 'SchemeFit में आपका स्वागत है' },
   'auth.chooseWorkspace': { en: 'Choose your workspace', hi: 'अपना कार्यक्षेत्र चुनें' },
   'auth.chooseHint': { en: 'Selecting a workspace only sets where you land — it never grants a role. Your access is decided by your account.', hi: 'कार्यक्षेत्र चुनना केवल यह तय करता है कि आप कहाँ पहुँचते हैं — इससे कोई भूमिका नहीं मिलती। आपकी पहुँच आपके खाते से तय होती है।' },
   'auth.citizenCard': { en: 'Citizen / Entrepreneur', hi: 'नागरिक / उद्यमी' },
@@ -122,7 +122,7 @@ export const dict = {
   'auth.securityNote': { en: 'Passwords are hashed with Argon2id. Sessions are server-side and never stored in the browser.', hi: 'पासवर्ड Argon2id से हैश किए जाते हैं। सत्र सर्वर पर रहते हैं और ब्राउज़र में कभी संग्रहीत नहीं होते।' },
   'auth.unexpectedError': { en: 'Unexpected error. Please try again.', hi: 'अप्रत्याशित त्रुटि। कृपया फिर से प्रयास करें।' },
   'auth.wrongWorkspace': { en: 'You selected the partner workspace, but this account is a {role} account. Showing your workspace instead.', hi: 'आपने साझेदार कार्यक्षेत्र चुना था, पर यह खाता {role} खाता है। इसके बजाय आपका कार्यक्षेत्र दिखाया जा रहा है।' },
-  'boot.starting': { en: 'Starting SchemeFit AI…', hi: 'SchemeFit AI शुरू हो रहा है…' },
+  'boot.starting': { en: 'Starting SchemeFit…', hi: 'SchemeFit शुरू हो रहा है…' },
 
   // ---- dashboard ----
   'dash.goodDay': { en: 'Good day, {name}', hi: 'नमस्ते, {name}' },

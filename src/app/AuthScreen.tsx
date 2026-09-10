@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowRight, CheckCircle2, Landmark, LockKeyhole, ShieldCheck, UserRound, Globe2 } from 'lucide-react';
 import '../components/login-screen.css';
+import { BrandMark } from '../components/BrandMark';
 import { ApiError } from '../api/client';
 import { useLogin, useRegister } from '../api/hooks';
 import { useLang, LANGS } from '../i18n';
@@ -51,9 +52,9 @@ export function AuthScreen({ onWorkspace }: { onWorkspace: (w: Workspace) => voi
     <main className="login-page">
       <section className="login-brand">
         <div className="login-logo">
-          <span>♧</span>
+          <BrandMark size={40} />
           <b>
-            SchemeFit <i>AI</i>
+            Scheme<i>Fit</i>
           </b>
         </div>
         <div className="login-brand-copy">

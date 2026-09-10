@@ -12,6 +12,7 @@ import {
   Download,
 } from 'lucide-react';
 import './partner-portal.css';
+import { BrandMark } from './BrandMark';
 import { Button, Loading, ErrorState, EmptyState, DemoBadge } from './ui';
 import {
   usePartnerSummary,
@@ -100,7 +101,8 @@ export function PartnerPortal({ user }: { user: AuthUser }) {
     <main className="partner-page">
       <header className="partner-header">
         <div className="partner-logo">
-          <span>♧</span>SchemeFit <i>AI</i>
+          <BrandMark size={26} />
+          <span className="partner-wordmark">Scheme<i>Fit</i></span>
           <b>Partner Portal</b>
         </div>
         <div>

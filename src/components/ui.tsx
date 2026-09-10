@@ -2,14 +2,15 @@ import React from 'react';
 import { ArrowRight, Check, AlertTriangle, Loader2, Sparkles, ShieldAlert, Inbox } from 'lucide-react';
 import { ApiError } from '../api/client';
 import { useLang } from '../i18n';
+import { BrandMark } from './BrandMark';
 
 export function Logo() {
   return (
     <div className="logo">
-      <span className="sprout">♧</span>
+      <BrandMark size={34} />
       <span>
-        SchemeFit <b>AI</b>
-        <small>Opportunities for Every Entrepreneur</small>
+        Scheme<b>Fit</b>
+        <small>Find schemes that fit you</small>
       </span>
     </div>
   );
