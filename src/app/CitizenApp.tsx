@@ -16,6 +16,7 @@ import { formatDate, relativeParts } from '../lib/format';
 import { useLang, LANGS } from '../i18n';
 import { Dashboard } from '../screens/Dashboard';
 import { GetStarted } from '../screens/GetStarted';
+import { EligibilityCheck } from '../screens/EligibilityCheck';
 import { Profile } from '../screens/Profile';
 import { SchemeMatches } from '../screens/SchemeMatches';
 import { LoanPlanner } from '../screens/LoanPlanner';
@@ -416,6 +417,8 @@ export function CitizenApp({ user }: { user: AuthUser }) {
     switch (path) {
       case '/start':
         return <GetStarted navigate={navigate} />;
+      case '/eligibility':
+        return <EligibilityCheck />;
       case '/profile':
         return <Profile />;
       case '/schemes':

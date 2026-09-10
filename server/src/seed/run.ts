@@ -28,14 +28,17 @@ import { EXTENSION_BY_MIME } from '../storage/file-signature';
 import { evaluateEligibility } from '../domain/eligibility';
 import { schemeToRuleSet, profileToFacts } from '../domain/adapters';
 import { runCalculation } from '../modules/finance/finance.service';
-import { schemes, partners, citizens, partnerUsers } from './fixtures';
+import { schemes as loanSchemes, partners, citizens, partnerUsers } from './fixtures';
+import { centralSchemes } from './central-schemes';
 import { tinyPdf, tinyPng } from './documents';
 
+const allSchemes = [...loanSchemes, ...centralSchemes];
+
 async function upsertSchemes() {
-  for (const s of schemes) {
+  for (const s of allSchemes) {
     await Scheme.findOneAndUpdate({ code: s.code }, { $set: s }, { upsert: true, new: true });
   }
-  logger.info(`seeded ${schemes.length} demo schemes`);
+  logger.info(`seeded ${allSchemes.length} demo schemes`);
 }
 
 async function upsertPartners() {
@@ -328,7 +331,7 @@ export interface SeedResult {
 export async function syncReferenceData(): Promise<{ schemes: number; partners: number }> {
   await upsertSchemes();
   await upsertPartners();
-  return { schemes: schemes.length, partners: partners.length };
+  return { schemes: allSchemes.length, partners: partners.length };
 }
 
 export async function seedDatabase({ fresh }: { fresh: boolean }): Promise<SeedResult> {

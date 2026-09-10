@@ -1,12 +1,23 @@
 import { Schema, type HydratedDocument, type Model } from 'mongoose';
 import { defineModel } from './registry';
-import { SOCIAL_CATEGORIES, AREA_TYPES, PURPOSES, MORATORIUM_INTEREST_HANDLING } from '../domain/types';
+import {
+  SOCIAL_CATEGORIES,
+  AREA_TYPES,
+  PURPOSES,
+  MORATORIUM_INTEREST_HANDLING,
+  SCHEME_KINDS,
+  GENDERS,
+  EDUCATION_LEVELS,
+  OCCUPATIONS,
+  RATION_CARD_TYPES,
+} from '../domain/types';
 import type {
   SchemeEligibilityRules,
   SchemeFinancingRules,
   SchemeTerms,
   RequiredDocumentSpec,
   Purpose,
+  SchemeKind,
 } from '../domain/types';
 
 /**
@@ -33,6 +44,7 @@ export interface SchemeAttrs {
   program: string;
   displayCategory: string;
   description: string;
+  kind: SchemeKind;
   supportedPurposes: Purpose[];
   eligibility: SchemeEligibilityRules;
   financing: SchemeFinancingRules;
@@ -61,6 +73,7 @@ const schemeSchema = new Schema<SchemeAttrs>(
     program: { type: String, required: true, trim: true },
     displayCategory: { type: String, required: true, trim: true },
     description: { type: String, default: '' },
+    kind: { type: String, enum: SCHEME_KINDS, default: 'financing', index: true },
     supportedPurposes: { type: [{ type: String, enum: PURPOSES }], default: [] },
 
     eligibility: {
@@ -75,6 +88,14 @@ const schemeSchema = new Schema<SchemeAttrs>(
         areaTypes: { type: [{ type: String, enum: AREA_TYPES }], default: undefined },
       },
       requiresBusinessPlan: { type: Boolean, default: false },
+      genders: { type: [{ type: String, enum: GENDERS }], default: undefined },
+      minEducationLevel: { type: String, enum: EDUCATION_LEVELS, default: undefined },
+      maxEducationLevel: { type: String, enum: EDUCATION_LEVELS, default: undefined },
+      occupations: { type: [{ type: String, enum: OCCUPATIONS }], default: undefined },
+      maxLandHoldingHectares: { type: Number, default: undefined },
+      rationCardTypes: { type: [{ type: String, enum: RATION_CARD_TYPES }], default: undefined },
+      minDisabilityPct: { type: Number, default: undefined },
+      studentRequired: { type: Boolean, default: false },
     },
 
     financing: {

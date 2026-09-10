@@ -29,7 +29,7 @@ export async function getRecommendations(req: Request, res: Response): Promise<v
   const financing = profileToFinancing(profile);
   const financingComplete = hasCompleteFinancing(financing);
 
-  const schemes = await Scheme.find({ status: 'active' }).sort({ name: 1 });
+  const schemes = await Scheme.find({ status: 'active', $or: [{ kind: 'financing' }, { kind: { $exists: false } }] }).sort({ name: 1 });
 
   const eligible: unknown[] = [];
   const needsInfo: unknown[] = [];
@@ -92,7 +92,7 @@ export async function getDocumentChecklist(req: Request, res: Response): Promise
 
   const facts = profileToFacts(profile);
   const financing = profileToFinancing(profile);
-  const schemes = await Scheme.find({ status: 'active' }).sort({ name: 1 });
+  const schemes = await Scheme.find({ status: 'active', $or: [{ kind: 'financing' }, { kind: { $exists: false } }] }).sort({ name: 1 });
 
   const considered: { code: string; name: string; status: 'eligible' | 'needs_information' }[] = [];
   const relevantSchemes: typeof schemes = [];

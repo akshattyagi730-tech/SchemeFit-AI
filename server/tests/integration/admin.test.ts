@@ -34,7 +34,7 @@ describe('admin operations & analytics', () => {
   it('creates and archives a scheme; archived schemes drop out of recommendations', async () => {
     await installDemoReferenceData();
     const admin = await loggedIn({ email: 'admin-sch@example.com', role: 'ADMIN' });
-    const list = await admin.get('/api/v1/admin/schemes').expect(200);
+    const list = await admin.get('/api/v1/admin/schemes?pageSize=100').expect(200);
     const nsfdc = list.body.data.find((s: { code: string }) => s.code === 'NSFDC-TL');
 
     await admin.post(`/api/v1/admin/schemes/${nsfdc.id}/archive`).expect(200);

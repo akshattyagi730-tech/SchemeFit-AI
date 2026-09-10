@@ -36,6 +36,58 @@ export const PURPOSE_GROUPS: { group: string; purposes: Purpose[] }[] = [
 export const MORATORIUM_INTEREST_HANDLING = ['serviced', 'capitalised'] as const;
 export type MoratoriumInterestHandling = (typeof MORATORIUM_INTEREST_HANDLING)[number];
 
+/** What sort of benefit a scheme provides. Only 'financing' schemes run the loan rules. */
+export const SCHEME_KINDS = [
+  'financing',
+  'scholarship',
+  'pension',
+  'income_support',
+  'housing',
+  'insurance',
+  'skilling',
+  'health',
+  'welfare',
+] as const;
+export type SchemeKind = (typeof SCHEME_KINDS)[number];
+
+export const GENDERS = ['female', 'male', 'transgender'] as const;
+export type Gender = (typeof GENDERS)[number];
+
+/** Ordinal — a scheme's min/max education level is compared by index. */
+export const EDUCATION_LEVELS = [
+  'none',
+  'below_primary',
+  'primary',
+  'class_8',
+  'class_10',
+  'class_12',
+  'iti_diploma',
+  'graduate',
+  'postgraduate',
+] as const;
+export type EducationLevel = (typeof EDUCATION_LEVELS)[number];
+
+export const OCCUPATIONS = [
+  'student',
+  'farmer',
+  'agri_labourer',
+  'daily_wager',
+  'artisan',
+  'street_vendor',
+  'domestic_worker',
+  'shg_member',
+  'self_employed',
+  'private_salaried',
+  'govt_salaried',
+  'unemployed',
+  'homemaker',
+  'other',
+] as const;
+export type Occupation = (typeof OCCUPATIONS)[number];
+
+export const RATION_CARD_TYPES = ['none', 'APL', 'BPL', 'AAY', 'PHH'] as const;
+export type RationCardType = (typeof RATION_CARD_TYPES)[number];
+
 export type EvaluationStatus = 'eligible' | 'ineligible' | 'needs_information';
 export type ConditionOutcome = 'passed' | 'failed' | 'unknown';
 
@@ -71,6 +123,15 @@ export interface SchemeEligibilityRules {
   maxAnnualIncomePaise?: number;
   location?: LocationScope;
   requiresBusinessPlan?: boolean;
+  // Broader criteria for non-loan schemes. Each rule only fires when set.
+  genders?: Gender[];
+  minEducationLevel?: EducationLevel;
+  maxEducationLevel?: EducationLevel;
+  occupations?: Occupation[];
+  maxLandHoldingHectares?: number;
+  rationCardTypes?: RationCardType[];
+  minDisabilityPct?: number;
+  studentRequired?: boolean;
 }
 
 export interface SchemeFinancingRules {
@@ -116,6 +177,13 @@ export interface ApplicantFacts {
   areaType?: AreaType | null;
   purpose?: Purpose | null;
   hasBusinessPlan?: boolean | null;
+  gender?: Gender | null;
+  educationLevel?: EducationLevel | null;
+  occupation?: Occupation | null;
+  landHoldingHectares?: number | null;
+  rationCardType?: RationCardType | null;
+  disabilityPct?: number | null;
+  isStudent?: boolean | null;
 }
 
 export interface FinancingInputs {

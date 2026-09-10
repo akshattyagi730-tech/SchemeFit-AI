@@ -306,13 +306,31 @@ button:disabled, [aria-disabled="true"], .button:disabled { cursor: not-allowed;
 }
 .modal > h2,
 .modal > p { flex: none; }
-.modal .compare-table {
+.modal .compare-table,
+.modal .el-results {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
 }
+.modal .el-results { padding-right: 4px; }
 .modal .compare-table .compare-head { position: sticky; top: 0; z-index: 1; }
+
+/* ---- Check Eligibility results ---- */
+.el-results { display: grid; gap: 10px; margin-top: 6px; }
+.section-h.ok { color: #0a7d54; display: flex; align-items: center; gap: 6px; }
+.section-h svg { flex: none; }
+.el-match { border: 1px solid #e3ecf2; border-radius: 9px; padding: 12px 14px; display: grid; gap: 6px; }
+.el-match-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.el-match-head b { font-size: 14px; color: #12305a; }
+.el-match-head small { font-size: 11px; color: #7d92b8; width: 100%; }
+.el-kind { font-size: 9px; font-weight: 800; letter-spacing: 0.4px; text-transform: uppercase; padding: 3px 7px; border-radius: 5px; background: #eef2f5; color: #5a739f; }
+.el-kind.eligible { background: #e0f9ef; color: #036b4f; }
+.el-match-desc { font-size: 12px; color: #47618c; line-height: 1.45; }
+.el-reasons { background: #f6fafc; border: 1px solid #e6eef3; border-radius: 7px; padding: 8px 10px; font-size: 11px; color: #4a648f; display: grid; gap: 4px; }
+.el-reasons-h { display: flex; align-items: center; gap: 5px; font-weight: 700; color: #33507f; }
+.el-reasons-h svg { flex: none; color: #b5781b; }
+.el-match .official-link { margin-top: 2px; }
 
 /* ---- Document authenticity badge ---- */
 .auth-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 5px; margin-left: 7px; vertical-align: middle; letter-spacing: 0.2px; }

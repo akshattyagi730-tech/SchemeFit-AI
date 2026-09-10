@@ -6,14 +6,47 @@
  * information yields `needs_information` (never a confident eligibility claim).
  */
 import { paiseToRupees } from '../lib/money';
+import { EDUCATION_LEVELS } from './types';
 import type {
   ApplicantFacts,
   ConditionResult,
+  EducationLevel,
   EligibilityResult,
   FinancingInputs,
+  Occupation,
   SchemeEligibilityRules,
   SchemeFinancingRules,
+  SchemeKind,
 } from './types';
+
+const EDU_INDEX = (l: EducationLevel) => EDUCATION_LEVELS.indexOf(l);
+const EDU_LABEL: Record<EducationLevel, string> = {
+  none: 'no formal schooling',
+  below_primary: 'below primary',
+  primary: 'primary',
+  class_8: 'Class 8',
+  class_10: 'Class 10',
+  class_12: 'Class 12',
+  iti_diploma: 'ITI / diploma',
+  graduate: 'graduate',
+  postgraduate: 'postgraduate',
+};
+const OCC_LABEL: Record<Occupation, string> = {
+  student: 'student',
+  farmer: 'farmer',
+  agri_labourer: 'agricultural labourer',
+  daily_wager: 'daily-wage worker',
+  artisan: 'artisan / craftsperson',
+  street_vendor: 'street vendor',
+  domestic_worker: 'domestic worker',
+  shg_member: 'SHG member',
+  self_employed: 'self-employed',
+  private_salaried: 'private-sector employee',
+  govt_salaried: 'government employee',
+  unemployed: 'unemployed',
+  homemaker: 'homemaker',
+  other: 'other',
+};
 
 const inr = (paise: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(
@@ -34,9 +67,10 @@ const PURPOSE_LABELS: Record<string, string> = {
 };
 
 export interface SchemeRuleSet {
+  kind?: SchemeKind;
   supportedPurposes: string[];
   eligibility: SchemeEligibilityRules;
-  financing: SchemeFinancingRules;
+  financing?: SchemeFinancingRules;
 }
 
 // Keys that are informational only — reported to the user but never change the
@@ -115,8 +149,8 @@ export function evaluateEligibility(
     }
   }
 
-  // 4. Purpose
-  {
+  // 4. Purpose — only for schemes that declare supported financing purposes.
+  if (scheme.supportedPurposes.length > 0) {
     if (facts.purpose == null) {
       c.push({ key: 'purpose', label: 'Financing purpose', outcome: 'unknown', detail: 'Select the purpose of financing in your profile.' });
     } else if (scheme.supportedPurposes.includes(facts.purpose)) {
@@ -156,6 +190,90 @@ export function evaluateEligibility(
     }
   }
 
+  // 5b. Gender
+  if (e.genders && e.genders.length > 0) {
+    if (facts.gender == null) {
+      c.push({ key: 'gender', label: 'Gender', outcome: 'unknown', detail: 'Add your gender so this rule can be checked.' });
+    } else if (e.genders.includes(facts.gender)) {
+      c.push({ key: 'gender', label: 'Gender', outcome: 'passed', detail: `This scheme is open to ${e.genders.join(' / ')} applicants.` });
+    } else {
+      c.push({ key: 'gender', label: 'Gender', outcome: 'failed', detail: `This scheme is limited to ${e.genders.join(' / ')} applicants.` });
+    }
+  }
+
+  // 5c. Education level (min / max, compared ordinally)
+  if (e.minEducationLevel != null || e.maxEducationLevel != null) {
+    if (facts.educationLevel == null) {
+      c.push({ key: 'education', label: 'Education level', outcome: 'unknown', detail: 'Add your highest education level so this rule can be checked.' });
+    } else {
+      const idx = EDU_INDEX(facts.educationLevel);
+      const lowOk = e.minEducationLevel == null || idx >= EDU_INDEX(e.minEducationLevel);
+      const highOk = e.maxEducationLevel == null || idx <= EDU_INDEX(e.maxEducationLevel);
+      if (lowOk && highOk) {
+        c.push({ key: 'education', label: 'Education level', outcome: 'passed', detail: `Your education level (${EDU_LABEL[facts.educationLevel]}) meets this scheme's requirement.` });
+      } else if (!lowOk) {
+        c.push({ key: 'education', label: 'Education level', outcome: 'failed', detail: `This scheme needs at least ${EDU_LABEL[e.minEducationLevel!]}; you recorded ${EDU_LABEL[facts.educationLevel]}.` });
+      } else {
+        c.push({ key: 'education', label: 'Education level', outcome: 'failed', detail: `This scheme is for students up to ${EDU_LABEL[e.maxEducationLevel!]}; you recorded ${EDU_LABEL[facts.educationLevel]}.` });
+      }
+    }
+  }
+
+  // 5d. Occupation
+  if (e.occupations && e.occupations.length > 0) {
+    if (facts.occupation == null) {
+      c.push({ key: 'occupation', label: 'Occupation', outcome: 'unknown', detail: 'Add your occupation so this rule can be checked.' });
+    } else if (e.occupations.includes(facts.occupation)) {
+      c.push({ key: 'occupation', label: 'Occupation', outcome: 'passed', detail: `This scheme covers ${OCC_LABEL[facts.occupation]}s.` });
+    } else {
+      c.push({ key: 'occupation', label: 'Occupation', outcome: 'failed', detail: `This scheme is for ${e.occupations.map((o) => OCC_LABEL[o]).join(', ')}. You recorded ${OCC_LABEL[facts.occupation]}.` });
+    }
+  }
+
+  // 5e. Land holding ceiling (small / marginal farmer schemes)
+  if (e.maxLandHoldingHectares != null) {
+    if (facts.landHoldingHectares == null) {
+      c.push({ key: 'land_holding', label: 'Land holding', outcome: 'unknown', detail: 'Add your land holding (in hectares) so this rule can be checked.' });
+    } else if (facts.landHoldingHectares <= e.maxLandHoldingHectares) {
+      c.push({ key: 'land_holding', label: 'Land holding', outcome: 'passed', detail: `Your land holding is within the ${e.maxLandHoldingHectares} ha ceiling.` });
+    } else {
+      c.push({ key: 'land_holding', label: 'Land holding', outcome: 'failed', detail: `This scheme is for holdings up to ${e.maxLandHoldingHectares} ha; you recorded ${facts.landHoldingHectares} ha.` });
+    }
+  }
+
+  // 5f. Ration card / BPL
+  if (e.rationCardTypes && e.rationCardTypes.length > 0) {
+    if (facts.rationCardType == null) {
+      c.push({ key: 'ration_card', label: 'Ration card', outcome: 'unknown', detail: 'Add your ration card type so this rule can be checked.' });
+    } else if (e.rationCardTypes.includes(facts.rationCardType)) {
+      c.push({ key: 'ration_card', label: 'Ration card', outcome: 'passed', detail: `This scheme covers ${e.rationCardTypes.join(' / ')} card holders.` });
+    } else {
+      c.push({ key: 'ration_card', label: 'Ration card', outcome: 'failed', detail: `This scheme is limited to ${e.rationCardTypes.join(' / ')} card holders.` });
+    }
+  }
+
+  // 5g. Disability
+  if (e.minDisabilityPct != null) {
+    if (facts.disabilityPct == null) {
+      c.push({ key: 'disability', label: 'Disability', outcome: 'unknown', detail: 'Add your certified disability percentage so this rule can be checked.' });
+    } else if (facts.disabilityPct >= e.minDisabilityPct) {
+      c.push({ key: 'disability', label: 'Disability', outcome: 'passed', detail: `Your certified disability (${facts.disabilityPct}%) meets the ${e.minDisabilityPct}% threshold.` });
+    } else {
+      c.push({ key: 'disability', label: 'Disability', outcome: 'failed', detail: `This scheme needs a certified disability of at least ${e.minDisabilityPct}%.` });
+    }
+  }
+
+  // 5h. Student status
+  if (e.studentRequired) {
+    if (facts.isStudent == null) {
+      c.push({ key: 'student', label: 'Student status', outcome: 'unknown', detail: 'Indicate whether you are currently a student.' });
+    } else if (facts.isStudent) {
+      c.push({ key: 'student', label: 'Student status', outcome: 'passed', detail: 'You are currently enrolled as a student.' });
+    } else {
+      c.push({ key: 'student', label: 'Student status', outcome: 'failed', detail: 'This scheme is for currently enrolled students.' });
+    }
+  }
+
   // 6. Business plan requirement
   if (e.requiresBusinessPlan) {
     if (facts.hasBusinessPlan == null) {
@@ -167,7 +285,8 @@ export function evaluateEligibility(
     }
   }
 
-  // 7. Financing rules — only when the applicant has supplied all three amounts.
+  // 7. Financing rules — only for loan schemes, and only when the applicant has
+  // supplied all three amounts.
   const f = financing;
   const haveFinancing =
     f != null &&
@@ -175,7 +294,10 @@ export function evaluateEligibility(
     typeof f.ownContributionPaise === 'number' &&
     typeof f.requestedLoanPaise === 'number';
 
-  if (!haveFinancing) {
+  const kind = scheme.kind ?? 'financing';
+  if (kind !== 'financing' || !scheme.financing) {
+    // Non-loan scheme: nothing more to check.
+  } else if (!haveFinancing) {
     c.push({ key: 'financing_rules', label: 'Financing limits', outcome: 'unknown', detail: 'Provide project cost, own contribution and requested loan so financing rules can be checked.' });
   } else {
     const projectCost = f.projectCostPaise!;

@@ -20,6 +20,85 @@ export interface MeResponse {
 
 export type SocialCategory = 'GENERAL' | 'OBC' | 'SC' | 'ST' | 'EWS' | 'MINORITY';
 export type AreaType = 'rural' | 'urban' | 'semi_urban';
+export type SchemeKind =
+  | 'financing'
+  | 'scholarship'
+  | 'pension'
+  | 'income_support'
+  | 'housing'
+  | 'insurance'
+  | 'skilling'
+  | 'health'
+  | 'welfare';
+export type Gender = 'female' | 'male' | 'transgender';
+export type EducationLevel =
+  | 'none'
+  | 'below_primary'
+  | 'primary'
+  | 'class_8'
+  | 'class_10'
+  | 'class_12'
+  | 'iti_diploma'
+  | 'graduate'
+  | 'postgraduate';
+export type Occupation =
+  | 'student'
+  | 'farmer'
+  | 'agri_labourer'
+  | 'daily_wager'
+  | 'artisan'
+  | 'street_vendor'
+  | 'domestic_worker'
+  | 'shg_member'
+  | 'self_employed'
+  | 'private_salaried'
+  | 'govt_salaried'
+  | 'unemployed'
+  | 'homemaker'
+  | 'other';
+export type RationCardType = 'none' | 'APL' | 'BPL' | 'AAY' | 'PHH';
+
+export interface EligibilityAnswers {
+  age?: number | null;
+  gender?: Gender | null;
+  category?: SocialCategory | null;
+  obcCreamyLayer?: boolean | null;
+  annualIncomePaise?: number | null;
+  state?: string | null;
+  areaType?: AreaType | null;
+  educationLevel?: EducationLevel | null;
+  occupation?: Occupation | null;
+  isStudent?: boolean | null;
+  landHoldingHectares?: number | null;
+  rationCardType?: RationCardType | null;
+  disabilityPct?: number | null;
+}
+
+export interface EligibilityMatch {
+  scheme: {
+    code: string;
+    name: string;
+    provider: string;
+    kind: SchemeKind;
+    displayCategory: string;
+    description: string;
+    officialUrl: string | null;
+    demoData: boolean;
+  };
+  status: 'eligible' | 'needs_information' | 'ineligible';
+  passed: string[];
+  failed: { key: string; label: string; detail: string }[];
+  unknown: { key: string; label: string; detail: string }[];
+}
+
+export interface EligibilityCheckResult {
+  generatedAt: string;
+  counts: { eligible: number; needsInformation: number; ineligible: number };
+  eligible: EligibilityMatch[];
+  needsInformation: EligibilityMatch[];
+  ineligible: EligibilityMatch[];
+  notes: string[];
+}
 export type Purpose =
   | 'business_new'
   | 'business_expansion'
@@ -74,6 +153,7 @@ export interface Scheme {
   program: string;
   displayCategory: string;
   description: string;
+  kind: SchemeKind;
   supportedPurposes: Purpose[];
   eligibility: Record<string, unknown>;
   financing: {

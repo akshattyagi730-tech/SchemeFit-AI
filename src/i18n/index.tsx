@@ -72,5 +72,10 @@ export function useLabels() {
     area: (v?: string | null) => get('area', v),
     status: (v?: string | null) => get('st', v),
     docState: (v?: string | null) => get('ds', v),
+    gender: (v?: string | null) => get('gen', v),
+    education: (v?: string | null) => get('edu', v),
+    occupation: (v?: string | null) => get('occ', v),
+    ration: (v?: string | null) => get('ration', v),
+    kind: (v?: string | null) => get('kind', v),
   };
 }

@@ -2,6 +2,7 @@ import {
   Home,
   UserRound,
   ClipboardList,
+  ClipboardCheck,
   Calculator,
   FolderOpen,
   Send,
@@ -23,6 +24,7 @@ export interface NavItem {
 export const NAV: NavItem[] = [
   { labelKey: 'nav.dashboard', route: '/', icon: Home, roles: ['CITIZEN', 'ADMIN'] },
   { labelKey: 'nav.getStarted', route: '/start', icon: Compass, roles: ['CITIZEN'] },
+  { labelKey: 'el.nav', route: '/eligibility', icon: ClipboardCheck, roles: ['CITIZEN'] },
   { labelKey: 'nav.profile', route: '/profile', icon: UserRound, roles: ['CITIZEN'] },
   { labelKey: 'nav.schemes', route: '/schemes', icon: ClipboardList, roles: ['CITIZEN'] },
   { labelKey: 'nav.loanPlanner', route: '/loan-planner', icon: Calculator, roles: ['CITIZEN'] },

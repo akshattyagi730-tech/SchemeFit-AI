@@ -7,14 +7,27 @@ import type { SchemeDoc } from '../models/Scheme';
 import type { CitizenProfileDoc } from '../models/CitizenProfile';
 import type { SchemeRuleSet } from './eligibility';
 import type { RankableScheme } from './ranking';
-import type { ApplicantFacts, AreaType, FinancingInputs, SocialCategory } from './types';
+import type {
+  ApplicantFacts,
+  AreaType,
+  EducationLevel,
+  FinancingInputs,
+  Gender,
+  Occupation,
+  RationCardType,
+  SchemeKind,
+  SocialCategory,
+} from './types';
+
+const arr = <T>(v: readonly unknown[] | undefined): T[] | undefined => (v && v.length ? (v as T[]) : undefined);
 
 export function schemeToRuleSet(s: SchemeDoc): SchemeRuleSet {
   const e = s.eligibility ?? {};
   return {
+    kind: (s.kind ?? 'financing') as SchemeKind,
     supportedPurposes: s.supportedPurposes ?? [],
     eligibility: {
-      categories: e.categories?.length ? (e.categories as SocialCategory[]) : undefined,
+      categories: arr<SocialCategory>(e.categories),
       minAge: e.minAge ?? undefined,
       maxAge: e.maxAge ?? undefined,
       minAnnualIncomePaise: e.minAnnualIncomePaise ?? undefined,
@@ -23,10 +36,18 @@ export function schemeToRuleSet(s: SchemeDoc): SchemeRuleSet {
         ? {
             states: e.location.states?.length ? e.location.states : undefined,
             districts: e.location.districts?.length ? e.location.districts : undefined,
-            areaTypes: e.location.areaTypes?.length ? (e.location.areaTypes as AreaType[]) : undefined,
+            areaTypes: arr<AreaType>(e.location.areaTypes),
           }
         : undefined,
       requiresBusinessPlan: e.requiresBusinessPlan ?? false,
+      genders: arr<Gender>(e.genders),
+      minEducationLevel: (e.minEducationLevel ?? undefined) as EducationLevel | undefined,
+      maxEducationLevel: (e.maxEducationLevel ?? undefined) as EducationLevel | undefined,
+      occupations: arr<Occupation>(e.occupations),
+      maxLandHoldingHectares: e.maxLandHoldingHectares ?? undefined,
+      rationCardTypes: arr<RationCardType>(e.rationCardTypes),
+      minDisabilityPct: e.minDisabilityPct ?? undefined,
+      studentRequired: e.studentRequired ?? false,
     },
     financing: {
       minAmountPaise: s.financing.minAmountPaise,

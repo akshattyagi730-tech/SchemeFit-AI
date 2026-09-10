@@ -123,6 +123,13 @@ export function useSchemes() {
   });
 }
 
+export function useEligibilityCheck() {
+  return useMutation({
+    mutationFn: (answers: import('./types').EligibilityAnswers) =>
+      unwrap(api.post<Envelope<import('./types').EligibilityCheckResult>>('/eligibility/check', answers)),
+  });
+}
+
 export function useRecommendations(enabled = true) {
   return useQuery({
     queryKey: qk.recommendations,
