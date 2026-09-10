@@ -16,8 +16,27 @@ import { getDigiLocker } from './index';
 const OAUTH_COOKIE = 'sf_dl_oauth';
 const b64url = (b: Buffer) => b.toString('base64url');
 
-function callbackUrl(req: Request): string {
-  return env.DIGILOCKER_REDIRECT_URI || `${req.protocol}://${req.get('host')}/api/v1/digilocker/callback`;
+/**
+ * The origin the browser is actually on. The SPA proxies /api to this API, so
+ * the whole OAuth round-trip must stay on that origin (otherwise the callback
+ * lands on a different host and the session + state cookies are not sent).
+ * Falls back to the configured client origin.
+ */
+function frontendOrigin(req: Request): string {
+  const candidates = [req.get('origin'), req.get('referer')].filter(Boolean) as string[];
+  for (const c of candidates) {
+    try {
+      const o = new URL(c).origin;
+      if (env.clientOrigins.includes(o)) return o;
+    } catch {
+      /* ignore */
+    }
+  }
+  return env.clientOrigins[0] ?? `${req.protocol}://${req.get('host')}`;
+}
+
+function callbackUrl(front: string): string {
+  return env.DIGILOCKER_REDIRECT_URI || `${front}/api/v1/digilocker/callback`;
 }
 
 function oauthCookieOptions() {
@@ -48,34 +67,36 @@ export async function connect(req: Request, res: Response): Promise<void> {
   const state = b64url(randomBytes(16));
   const verifier = b64url(randomBytes(32));
   const challenge = b64url(createHash('sha256').update(verifier).digest());
+  const front = frontendOrigin(req);
 
-  res.cookie(OAUTH_COOKIE, JSON.stringify({ state, verifier }), oauthCookieOptions());
-  const authorizeUrl = provider.authorizeUrl({ state, codeChallenge: challenge, redirectUri: callbackUrl(req) });
+  res.cookie(OAUTH_COOKIE, JSON.stringify({ state, verifier, front }), oauthCookieOptions());
+  const authorizeUrl = provider.authorizeUrl({ state, codeChallenge: challenge, redirectUri: callbackUrl(front) });
   ok(res, { authorizeUrl, provider: provider.mode });
 }
 
 export async function callback(req: Request, res: Response): Promise<void> {
-  const spa = env.clientOrigins[0] ?? 'http://localhost:5173';
+  const raw = req.cookies?.[OAUTH_COOKIE] as string | undefined;
+  res.clearCookie(OAUTH_COOKIE, { ...oauthCookieOptions(), maxAge: undefined });
+
+  let parsed: { state: string; verifier: string; front?: string } | null = null;
+  try {
+    parsed = raw ? JSON.parse(raw) : null;
+  } catch {
+    parsed = null;
+  }
+  const spa = (parsed?.front && env.clientOrigins.includes(parsed.front) ? parsed.front : env.clientOrigins[0]) ?? 'http://localhost:5173';
   const fail = (reason: string) => res.redirect(`${spa}/documents?digilocker=error&reason=${encodeURIComponent(reason)}`);
 
   const code = typeof req.query.code === 'string' ? req.query.code : '';
   const state = typeof req.query.state === 'string' ? req.query.state : '';
-  const raw = req.cookies?.[OAUTH_COOKIE] as string | undefined;
-  res.clearCookie(OAUTH_COOKIE, { ...oauthCookieOptions(), maxAge: undefined });
 
-  if (!code || !raw) return void fail('missing_code');
-  let parsed: { state: string; verifier: string };
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    return void fail('bad_session');
-  }
+  if (!code || !parsed) return void fail('missing_code');
   if (!parsed.state || parsed.state !== state) return void fail('state_mismatch');
   if (!req.auth) return void fail('not_signed_in');
 
   try {
     const provider = getDigiLocker();
-    const session = await provider.exchangeCode({ code, codeVerifier: parsed.verifier, redirectUri: callbackUrl(req) });
+    const session = await provider.exchangeCode({ code, codeVerifier: parsed.verifier, redirectUri: callbackUrl(parsed.front ?? spa) });
     await DigiLockerConnection.findOneAndUpdate(
       { userId: req.auth.userId },
       {
