@@ -264,6 +264,34 @@ button.avatar:hover { filter: brightness(1.07); }
   .footer-disc { margin-top: 0; flex-basis: auto; }
 }
 
+/* ---- Cursor: arrow over text (app-like), I-beam only in real inputs ---- */
+body { cursor: default; }
+input, textarea, [contenteditable="true"] { cursor: text; }
+input[type="checkbox"], input[type="radio"], input[type="range"], input[type="color"],
+input[type="file"], input[type="submit"], input[type="button"], input[type="reset"] { cursor: pointer; }
+a[href], button, select, summary, label[for],
+[role="button"], [role="tab"], [role="menuitem"], [role="menuitemradio"] { cursor: pointer; }
+button:disabled, [aria-disabled="true"], .button:disabled { cursor: not-allowed; }
+
+/* ---- Modal: cap to viewport, scroll the content inside, never the page behind ---- */
+.modal-wrap { overflow-y: auto; overscroll-behavior: contain; }
+.modal {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
+}
+.modal > h2,
+.modal > p { flex: none; }
+.modal .compare-table,
+.modal .dl-issued-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.modal .compare-table .compare-head { position: sticky; top: 0; z-index: 1; }
+
 /* ---- DigiLocker panel + document authenticity ---- */
 .dl-panel { border: 1px solid #cfe6f2; background: linear-gradient(115deg, #eef7fb, #fff); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
 .dl-panel-main { display: flex; align-items: flex-start; gap: 12px; }
