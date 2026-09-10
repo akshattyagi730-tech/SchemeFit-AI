@@ -8,7 +8,7 @@ const demoSchemes = [...loanSchemes, ...centralSchemes];
 /** Idempotent: safe to call multiple times within one test. */
 export async function installDemoSchemes() {
   await Promise.all(
-    demoSchemes.map((s) => Scheme.updateOne({ code: s.code }, { $set: s }, { upsert: true })),
+    demoSchemes.map((s) => Scheme.updateOne({ code: s.code }, { $set: { kind: 'financing', ...s } }, { upsert: true })),
   );
 }
 

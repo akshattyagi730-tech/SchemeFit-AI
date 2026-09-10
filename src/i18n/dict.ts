@@ -571,7 +571,7 @@ export const dict = {
 
   // ---- Check Eligibility flow ----
   'el.title': { en: 'Check My Eligibility', hi: 'मेरी पात्रता जाँचें' },
-  'el.intro': { en: 'Answer what you can. A deterministic rule engine checks every scheme’s stored rules against your answers and shows which you qualify for — with the official link to apply.', hi: 'जो पता हो वह भरें। एक निर्धारित नियम इंजन हर योजना के नियमों को आपके उत्तरों से जाँचता है और बताता है कि आप किनके लिए पात्र हैं — आवेदन के आधिकारिक लिंक के साथ।' },
+  'el.intro': { en: 'Answer what you can. A deterministic rule engine checks scholarships, pensions, subsidies, housing, insurance and welfare schemes against your answers and shows which you qualify for — with the official link to apply. (For loans, use Scheme Matches.)', hi: 'जो पता हो वह भरें। एक निर्धारित नियम इंजन छात्रवृत्ति, पेंशन, सब्सिडी, आवास, बीमा और कल्याण योजनाओं को आपके उत्तरों से जाँचता है और बताता है कि आप किनके लिए पात्र हैं — आवेदन के आधिकारिक लिंक के साथ। (ऋण के लिए “योजना मिलान” देखें।)' },
   'el.nav': { en: 'Check Eligibility', hi: 'पात्रता जाँचें' },
   'el.q.age': { en: 'Your age (years)', hi: 'आपकी आयु (वर्ष)' },
   'el.q.gender': { en: 'Gender', hi: 'लिंग' },

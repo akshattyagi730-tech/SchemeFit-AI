@@ -41,7 +41,9 @@ const factsFrom = (b: EligibilityCheckInput): ApplicantFacts => ({
 
 export async function checkEligibility(req: Request, res: Response): Promise<void> {
   const facts = factsFrom(req.body as EligibilityCheckInput);
-  const schemes = await Scheme.find({ status: 'active' }).sort({ name: 1 });
+  // Loans have their own dedicated flow (Scheme Matches + Loan Planner) which
+  // needs a purpose and financing amounts. This check covers everything else.
+  const schemes = await Scheme.find({ status: 'active', kind: { $ne: 'financing' } }).sort({ name: 1 });
 
   const eligible: Match[] = [];
   const needsInfo: Match[] = [];
@@ -83,6 +85,7 @@ export async function checkEligibility(req: Request, res: Response): Promise<voi
     notes: [
       'Eligibility is decided by a deterministic rule engine against each scheme’s stored rules. No language model is involved.',
       'Answer more questions to move schemes out of “needs more information”.',
+      'Loans and credit are matched separately in “Scheme Matches”, which also needs a purpose and financing amounts.',
       'Seeded schemes are demonstration data and are not a statement of official government policy. Confirm details on the official portal before applying.',
     ],
   });

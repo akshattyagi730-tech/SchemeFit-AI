@@ -99,13 +99,13 @@ export function evaluateEligibility(
   // 1. Social category
   if (e.categories && e.categories.length > 0) {
     if (facts.category == null) {
-      c.push({ key: 'social_category', label: 'Social category', outcome: 'unknown', detail: 'Add your social category to your profile so this rule can be checked.' });
+      c.push({ key: 'social_category', label: 'Social category', outcome: 'unknown', detail: 'Add your social category so this rule can be checked.' });
     } else if (!e.categories.includes(facts.category)) {
       c.push({ key: 'social_category', label: 'Social category', outcome: 'failed', detail: `This scheme is limited to ${e.categories.join(', ')}. Your profile records ${facts.category}.` });
     } else if (facts.category === 'OBC' && e.categories.includes('OBC')) {
       // Concessional OBC schemes (NBCFDC etc.) are limited to the Non-Creamy Layer.
       if (facts.obcCreamyLayer == null) {
-        c.push({ key: 'social_category', label: 'Social category', outcome: 'unknown', detail: 'This OBC scheme is limited to the Non-Creamy Layer. Confirm your OBC creamy-layer status in your profile.' });
+        c.push({ key: 'social_category', label: 'Social category', outcome: 'unknown', detail: 'This OBC scheme is limited to the Non-Creamy Layer. Confirm your OBC creamy-layer status (Creamy or Non-Creamy Layer).' });
       } else if (facts.obcCreamyLayer) {
         c.push({ key: 'social_category', label: 'Social category', outcome: 'failed', detail: 'This scheme is limited to the OBC Non-Creamy Layer. Your profile records OBC Creamy Layer (treated as General for these schemes).' });
       } else {
@@ -119,7 +119,7 @@ export function evaluateEligibility(
   // 2. Age band
   if (e.minAge != null || e.maxAge != null) {
     if (facts.age == null) {
-      c.push({ key: 'age', label: 'Age', outcome: 'unknown', detail: 'Add your age to your profile.' });
+      c.push({ key: 'age', label: 'Age', outcome: 'unknown', detail: 'Add your age.' });
     } else {
       const lowOk = e.minAge == null || facts.age >= e.minAge;
       const highOk = e.maxAge == null || facts.age <= e.maxAge;
@@ -127,7 +127,7 @@ export function evaluateEligibility(
       c.push(
         lowOk && highOk
           ? { key: 'age', label: 'Age', outcome: 'passed', detail: `Your age (${facts.age}) is within the permitted range (${range}).` }
-          : { key: 'age', label: 'Age', outcome: 'failed', detail: `This scheme requires an age of ${range}; your profile records ${facts.age}.` },
+          : { key: 'age', label: 'Age', outcome: 'failed', detail: `This scheme requires an age of ${range}; you gave ${facts.age}.` },
       );
     }
   }
@@ -135,7 +135,7 @@ export function evaluateEligibility(
   // 3. Annual household income
   if (e.minAnnualIncomePaise != null || e.maxAnnualIncomePaise != null) {
     if (facts.annualIncomePaise == null) {
-      c.push({ key: 'annual_income', label: 'Annual household income', outcome: 'unknown', detail: 'Add your annual household income to your profile.' });
+      c.push({ key: 'annual_income', label: 'Annual household income', outcome: 'unknown', detail: 'Add your annual household income.' });
     } else {
       const lowOk = e.minAnnualIncomePaise == null || facts.annualIncomePaise >= e.minAnnualIncomePaise;
       const highOk = e.maxAnnualIncomePaise == null || facts.annualIncomePaise <= e.maxAnnualIncomePaise;
@@ -152,7 +152,7 @@ export function evaluateEligibility(
   // 4. Purpose — only for schemes that declare supported financing purposes.
   if (scheme.supportedPurposes.length > 0) {
     if (facts.purpose == null) {
-      c.push({ key: 'purpose', label: 'Financing purpose', outcome: 'unknown', detail: 'Select the purpose of financing in your profile.' });
+      c.push({ key: 'purpose', label: 'Financing purpose', outcome: 'unknown', detail: 'Select the purpose of financing.' });
     } else if (scheme.supportedPurposes.includes(facts.purpose)) {
       c.push({ key: 'purpose', label: 'Financing purpose', outcome: 'passed', detail: `This scheme supports financing to ${PURPOSE_LABELS[facts.purpose] ?? facts.purpose}.` });
     } else {
@@ -165,7 +165,7 @@ export function evaluateEligibility(
     const loc = e.location;
     const missing = !facts.state && !facts.district && !facts.areaType;
     if (missing) {
-      c.push({ key: 'location', label: 'Location', outcome: 'unknown', detail: 'Add your state, district and area type to your profile.' });
+      c.push({ key: 'location', label: 'Location', outcome: 'unknown', detail: 'Add your state, district and area type.' });
     } else {
       const stateOk = !loc.states?.length || (facts.state != null && loc.states.includes(facts.state));
       const districtOk = !loc.districts?.length || (facts.district != null && loc.districts.includes(facts.district));

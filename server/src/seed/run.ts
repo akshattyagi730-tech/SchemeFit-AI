@@ -36,7 +36,7 @@ const allSchemes = [...loanSchemes, ...centralSchemes];
 
 async function upsertSchemes() {
   for (const s of allSchemes) {
-    await Scheme.findOneAndUpdate({ code: s.code }, { $set: s }, { upsert: true, new: true });
+    await Scheme.findOneAndUpdate({ code: s.code }, { $set: { kind: 'financing', ...s } }, { upsert: true, new: true });
   }
   logger.info(`seeded ${allSchemes.length} demo schemes`);
 }
