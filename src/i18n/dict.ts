@@ -317,6 +317,8 @@ export const dict = {
   'lp.ownContribution': { en: 'Own contribution (₹)', hi: 'स्वयं का अंशदान (₹)' },
   'lp.requestedLoan': { en: 'Requested loan (₹)', hi: 'माँगा गया ऋण (₹)' },
   'lp.interestRate': { en: 'Interest rate', hi: 'ब्याज दर' },
+  'lp.rateFixedNote': { en: 'This scheme’s rate is fixed at {rate}.', hi: 'इस योजना की ब्याज दर {rate} पर तय है।' },
+  'lp.rateBandHint': { en: 'Slide to model any rate a lender might offer within this scheme’s {min}–{max} band.', hi: 'इस योजना की {min}–{max} सीमा में कोई भी दर आज़माने के लिए स्लाइड करें जो कोई ऋणदाता दे सकता है।' },
   'lp.tenureMonths': { en: 'Tenure (months)', hi: 'अवधि (महीने)' },
   'lp.moratoriumMonths': { en: 'Moratorium (months)', hi: 'मोहलत (महीने)' },
   'lp.results': { en: 'Your estimate', hi: 'आपका अनुमान' },

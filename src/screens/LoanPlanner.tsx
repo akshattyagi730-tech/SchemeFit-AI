@@ -86,7 +86,7 @@ export function LoanPlanner({ navigate }: { navigate: (to: string) => void }) {
     planError = e instanceof Error ? e.message : t('lp.cannotCompute');
   }
 
-  const rateOptions = rateStops(scheme.terms.minInterestRateBps, scheme.terms.maxInterestRateBps);
+  const rateFixed = scheme.terms.minInterestRateBps === scheme.terms.maxInterestRateBps;
   const tenureOptions = tenureStops(scheme.terms.minTenureMonths, scheme.terms.maxTenureMonths);
   const moratoriumOptions = scheme.terms.moratorium.allowed
     ? Array.from({ length: Math.floor(scheme.terms.moratorium.maxMonths / 3) + 1 }, (_, i) => i * 3)
@@ -172,14 +172,27 @@ export function LoanPlanner({ navigate }: { navigate: (to: string) => void }) {
             </select>
           </label>
           <label>
-            {t('lp.interestRate')}
-            <select value={rateBps} disabled={!editable} onChange={(e) => setRateBps(+e.target.value)}>
-              {rateOptions.map((b) => (
-                <option key={b} value={b}>
-                  {bpsToPct(b)} {t('lp.annually')}
-                </option>
-              ))}
-            </select>
+            {t('lp.interestRate')} <b>{bpsToPct(rateBps)} {t('lp.annually')}</b>
+            {rateFixed ? (
+              <small className="inline-note" style={{ marginTop: 4 }}>
+                {t('lp.rateFixedNote', { rate: bpsToPct(scheme.terms.minInterestRateBps) })}
+              </small>
+            ) : (
+              <>
+                <input
+                  type="range"
+                  min={scheme.terms.minInterestRateBps}
+                  max={scheme.terms.maxInterestRateBps}
+                  step={25}
+                  value={rateBps}
+                  disabled={!editable}
+                  onChange={(e) => setRateBps(+e.target.value)}
+                />
+                <span>
+                  {bpsToPct(scheme.terms.minInterestRateBps)} <i /> {bpsToPct(scheme.terms.maxInterestRateBps)}
+                </span>
+              </>
+            )}
           </label>
           <label>
             {t('lp.moratoriumPeriod')}
@@ -337,14 +350,6 @@ export function LoanPlanner({ navigate }: { navigate: (to: string) => void }) {
       )}
     </>
   );
-}
-
-function rateStops(minBps: number, maxBps: number): number[] {
-  if (minBps === maxBps) return [minBps];
-  const out: number[] = [];
-  for (let b = minBps; b <= maxBps; b += 100) out.push(b);
-  if (out[out.length - 1] !== maxBps) out.push(maxBps);
-  return out;
 }
 
 function tenureStops(min: number, max: number): number[] {
