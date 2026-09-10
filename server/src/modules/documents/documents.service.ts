@@ -182,7 +182,7 @@ async function createDocumentVersion({
       message: `"${spec.label}" on ${application.reference} was verified from its ${
         source === 'digilocker' ? 'DigiLocker issuer record' : 'digital signature'
       }.`,
-      link: `/applications/${application._id}`,
+      link: `/documents`,
       applicationId: String(application._id),
     });
   }
@@ -348,7 +348,7 @@ export async function reviewDocument({ req, doc, application, decision, feedback
         decision === 'verified'
           ? `"${doc.label}" on ${application.reference} was verified.`
           : `"${doc.label}" on ${application.reference} needs changes: ${doc.reviewFeedback}`,
-      link: `/applications/${application._id}`,
+      link: `/documents`,
       applicationId: String(application._id),
     });
   }

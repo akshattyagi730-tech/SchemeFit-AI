@@ -78,6 +78,7 @@ export const dict = {
   'notif.title': { en: 'Notifications', hi: 'सूचनाएँ' },
   'notif.markAllRead': { en: 'Mark all read', hi: 'सभी पढ़ा हुआ चिह्नित करें' },
   'notif.empty': { en: 'No notifications yet.', hi: 'अभी कोई सूचना नहीं।' },
+  'notif.openLink': { en: 'tap to open', hi: 'खोलने के लिए टैप करें' },
   'notif.new': { en: 'new', hi: 'नई' },
   'notif.justNow': { en: 'just now', hi: 'अभी-अभी' },
   'notif.minutesAgo': { en: '{n} min ago', hi: '{n} मिनट पहले' },

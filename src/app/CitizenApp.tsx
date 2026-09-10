@@ -152,7 +152,7 @@ function SearchBox({ navigate, items }: { navigate: (to: string) => void; items:
   );
 }
 
-function NotificationsBell() {
+function NotificationsBell({ navigate }: { navigate: (to: string) => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { data } = useNotifications();
@@ -160,6 +160,21 @@ function NotificationsBell() {
   const { t } = useLang();
   const unread = data?.meta?.unread ?? 0;
   useDismiss(ref, () => setOpen(false));
+
+  // Map a notification's link to a route this (citizen) app actually has.
+  const routeFor = (link: string): string | null => {
+    if (!link || link === '/') return null;
+    if (link.startsWith('/partner') || link.startsWith('/admin')) return null;
+    if (link.startsWith('/applications/')) return '/documents';
+    return link;
+  };
+
+  const openNotification = (n: { id: string; link: string; read: boolean }) => {
+    setOpen(false);
+    if (!n.read) markRead.mutate([n.id]);
+    const to = routeFor(n.link);
+    if (to) navigate(to);
+  };
 
   const rel = (iso: string) => {
     const { unit, n } = relativeParts(iso);
@@ -183,13 +198,21 @@ function NotificationsBell() {
             {unread > 0 && <button onClick={() => markRead.mutate('all')}>{t('notif.markAllRead')}</button>}
           </h4>
           {(data?.notifications ?? []).length === 0 && <div className="notif-item">{t('notif.empty')}</div>}
-          {(data?.notifications ?? []).map((n) => (
-            <div key={n.id} className={`notif-item ${n.read ? '' : 'unread'}`}>
-              <b>{n.title}</b>
-              <span>{n.message}</span>
-              <small>{rel(n.createdAt)}</small>
-            </div>
-          ))}
+          {(data?.notifications ?? []).map((n) => {
+            const clickable = routeFor(n.link) !== null;
+            return (
+              <button
+                key={n.id}
+                type="button"
+                className={`notif-item ${n.read ? '' : 'unread'} ${clickable ? 'linked' : ''}`}
+                onClick={() => openNotification(n)}
+              >
+                <b>{n.title}</b>
+                <span>{n.message}</span>
+                <small>{rel(n.createdAt)}{clickable ? ` · ${t('notif.openLink')}` : ''}</small>
+              </button>
+            );
+          })}
         </div>
       )}
     </div>
@@ -397,7 +420,7 @@ export function CitizenApp({ user }: { user: AuthUser }) {
           </div>
           <SearchBox navigate={navigate} items={items} />
           <div className="head-actions">
-            <NotificationsBell />
+            <NotificationsBell navigate={navigate} />
             <span className="divider" />
             <AccountMenu user={user} navigate={navigate} onSignOut={signOut} />
           </div>

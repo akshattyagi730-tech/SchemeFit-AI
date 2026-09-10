@@ -59,9 +59,12 @@
 }
 .notif-panel h4 { font-size: 13px; padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; }
 .notif-panel h4 button { background: transparent; color: #0067d8; font-size: 11px; font-weight: 700; }
-.notif-item { display: grid; gap: 3px; padding: 10px; border-top: 1px solid #eef3f6; font-size: 12px; }
+.notif-item { display: grid; gap: 3px; padding: 10px; border-top: 1px solid #eef3f6; font-size: 12px; width: 100%; text-align: left; background: transparent; border-radius: 6px; }
+button.notif-item { color: inherit; }
 .notif-item.unread { background: #f2fbf8; }
+.notif-item.linked:hover { background: #eef4f7; }
 .notif-item b { color: #12305a; font-size: 12px; }
+.notif-item span { color: #3a507a; }
 .notif-item small { color: #7d92b8; font-size: 10px; }
 .head-actions .bell { cursor: pointer; }
 
