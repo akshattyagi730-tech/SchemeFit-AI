@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Bell, Check, ClipboardList, LogOut, Menu, Search, UserRound, X } from 'lucide-react';
 import { Logo } from '../components/ui';
 import { ErrorBoundary } from '../components/ErrorBoundary';
-import { AshokaEmblem } from '../components/AshokaEmblem';
+import { PrototypeBanner } from '../components/PrototypeBanner';
 import { navFor, type NavItem } from './nav';
 import {
   useLogout,
@@ -379,7 +379,6 @@ export function CitizenApp({ user }: { user: AuthUser }) {
           ))}
         </nav>
         <div className="side-bottom">
-          <AshokaEmblem />
           <div className="tricolor">
             <i />
             <i />
@@ -409,6 +408,7 @@ export function CitizenApp({ user }: { user: AuthUser }) {
       </aside>
 
       <main>
+        <PrototypeBanner />
         <header className="header">
           <button className="mobile-menu" onClick={() => setSideOpen(true)} aria-label={t('header.menu')}>
             <Menu />

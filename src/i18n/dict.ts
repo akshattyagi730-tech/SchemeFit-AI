@@ -42,6 +42,10 @@ export const dict = {
     hi: 'प्रदर्शन परियोजना — यहाँ दिखाए गए योजना नियम, दरें और स्वीकृतियाँ केवल उदाहरण हैं और यह कोई आधिकारिक सरकारी रिकॉर्ड नहीं है।',
   },
   'disc.footerNote': { en: 'Not an official government portal', hi: 'यह कोई आधिकारिक सरकारी पोर्टल नहीं है' },
+  'disc.banner': {
+    en: 'SIH 2026 prototype · Independent student submission · Not affiliated with, endorsed by, or operated by the Government of India',
+    hi: 'SIH 2026 प्रोटोटाइप · स्वतंत्र छात्र प्रस्तुति · भारत सरकार से संबद्ध, अनुमोदित या संचालित नहीं',
+  },
   'disc.tagline': { en: 'Because every entrepreneur deserves a fair chance.', hi: 'क्योंकि हर उद्यमी एक उचित अवसर का हक़दार है।' },
   'brand.subtitle': { en: 'Opportunities for Every Entrepreneur', hi: 'हर उद्यमी के लिए अवसर' },
   'brand.mission': { en: 'Building an Inclusive India', hi: 'एक समावेशी भारत का निर्माण' },

@@ -271,6 +271,17 @@ button.avatar:hover { filter: brightness(1.07); }
 .why > div > b { display: block; margin-bottom: 5px; }
 .why > div > .auth-switch { display: inline-block; }
 
+/* ---- Prototype / not-affiliated banner (above every shell) ---- */
+.proto-banner {
+  display: flex; align-items: center; gap: 7px;
+  background: #10233b; color: #cfe0f0;
+  padding: 5px 16px; font-size: 11px; line-height: 1.4;
+  letter-spacing: 0.1px;
+}
+.proto-banner > svg { flex: none; color: #7fb0d6; }
+.proto-banner span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 700px) { .proto-banner span { white-space: normal; } }
+
 /* ---- Brand mark sizing on the compact footer logo ---- */
 footer .logo svg { width: 22px; height: 22px; }
 

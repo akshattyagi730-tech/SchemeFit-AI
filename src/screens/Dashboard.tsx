@@ -1,5 +1,4 @@
 import { FileText, ShieldCheck, UsersRound, ArrowRight, AlertTriangle, Sparkles, CheckCircle2, IndianRupee, Compass } from 'lucide-react';
-import { MadeInIndiaMark } from '../components/MadeInIndiaMark';
 import { Button, ScoreRing, Loading, ErrorState, EmptyState, DemoBadge } from '../components/ui';
 import { useRecommendations, useApplication, useDocuments, useRouting } from '../api/hooks';
 import { useActiveApplication } from '../app/active-application';
@@ -83,7 +82,6 @@ export function Dashboard({ navigate }: { navigate: (to: string) => void }) {
           </h1>
           <p>{t('dash.welcomeSub')}</p>
         </div>
-        <MadeInIndiaMark />
         <div className="india-quote">
           <b>
             {lang === 'hi' ? (
@@ -103,7 +101,7 @@ export function Dashboard({ navigate }: { navigate: (to: string) => void }) {
           <i />
           <span>
             {lang === 'hi' ? '“छोटे सपने बड़ा भारत बनाते हैं।”' : '“Small dreams build a big India.”'}
-            <small>{lang === 'hi' ? '— नीति आयोग (उदाहरण)' : '— NITI Aayog (illustrative)'}</small>
+            <small>{lang === 'hi' ? '— SchemeFit टीम' : '— the SchemeFit team'}</small>
           </span>
         </div>
       </section>

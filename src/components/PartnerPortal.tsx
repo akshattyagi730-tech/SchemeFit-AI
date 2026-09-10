@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import './partner-portal.css';
 import { BrandMark } from './BrandMark';
+import { PrototypeBanner } from './PrototypeBanner';
 import { Button, Loading, ErrorState, EmptyState, DemoBadge } from './ui';
 import {
   usePartnerSummary,
@@ -98,7 +99,9 @@ export function PartnerPortal({ user }: { user: AuthUser }) {
   const org = summary.data?.organisation;
 
   return (
-    <main className="partner-page">
+    <>
+      <PrototypeBanner />
+      <main className="partner-page">
       <header className="partner-header">
         <div className="partner-logo">
           <BrandMark size={26} />
@@ -374,6 +377,7 @@ export function PartnerPortal({ user }: { user: AuthUser }) {
           </section>
         </div>
       </div>
-    </main>
+      </main>
+    </>
   );
 }
