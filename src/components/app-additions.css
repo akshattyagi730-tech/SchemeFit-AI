@@ -264,6 +264,10 @@ button.avatar:hover { filter: brightness(1.07); }
   .footer-disc { margin-top: 0; flex-basis: auto; }
 }
 
+/* ---- Scheme card "Why this fits": heading and toggle on their own lines ---- */
+.why > div > b { display: block; margin-bottom: 5px; }
+.why > div > .auth-switch { display: inline-block; }
+
 /* ---- Brand mark sizing on the compact footer logo ---- */
 footer .logo svg { width: 22px; height: 22px; }
 
