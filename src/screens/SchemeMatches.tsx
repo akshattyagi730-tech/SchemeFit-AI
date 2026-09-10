@@ -108,12 +108,6 @@ export function SchemeMatches({ navigate }: { navigate: (to: string) => void }) 
         <EmptyState title={t('sm.noSchemes')} hint={t('sm.noSchemesHint')} />
       )}
 
-      {(eligible.length > 0 || needsInfo.length > 0) && (
-        <div style={{ marginBottom: 16 }}>
-          <DocumentChecklist compact />
-        </div>
-      )}
-
       {eligible.length > 0 && <h3 className="section-h">{t('sm.eligibleRanked', { n: eligible.length })}</h3>}
       <div className="scheme-list">
         {eligible.map((r) => (
@@ -130,6 +124,12 @@ export function SchemeMatches({ navigate }: { navigate: (to: string) => void }) 
             ))}
           </div>
         </>
+      )}
+
+      {(eligible.length > 0 || needsInfo.length > 0) && (
+        <div style={{ margin: '18px 0' }}>
+          <DocumentChecklist compact />
+        </div>
       )}
 
       {ineligible.length > 0 && (
