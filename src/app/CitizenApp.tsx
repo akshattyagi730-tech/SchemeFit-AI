@@ -3,6 +3,7 @@ import { Bell, Check, ClipboardList, LogOut, Menu, Mic, Search, Sparkles, UserRo
 import { Logo } from '../components/ui';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { PrototypeBanner } from '../components/PrototypeBanner';
+import { FlagMark } from '../components/FlagMark';
 import { navFor, type NavItem } from './nav';
 import {
   useLogout,
@@ -500,7 +501,7 @@ export function CitizenApp({ user }: { user: AuthUser }) {
           </button>
           <div className="mission">
             <b>{t('brand.mission')}</b>
-            <i />
+            <FlagMark height={30} />
             <small>{t('brand.missionSub')}</small>
           </div>
           <SearchBox navigate={navigate} items={items} />

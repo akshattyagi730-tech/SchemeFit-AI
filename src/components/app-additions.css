@@ -273,6 +273,10 @@ button.avatar:hover { filter: brightness(1.07); }
 .why > div > b { display: block; margin-bottom: 5px; }
 .why > div > .auth-switch { display: inline-block; }
 
+/* ---- Mission line: flag accent alignment ---- */
+.mission { align-items: center; }
+.mission > svg { align-self: center; }
+
 /* ---- Prototype / not-affiliated banner (above every shell) ---- */
 .proto-banner {
   display: flex; align-items: center; gap: 7px;
