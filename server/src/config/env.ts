@@ -38,16 +38,6 @@ const schema = z.object({
   S3_SECRET_ACCESS_KEY: z.string().optional().default(''),
   S3_FORCE_PATH_STYLE: boolish.optional().default('true'),
 
-  // DigiLocker (Meripehchaan) OAuth 2.0. When CLIENT_ID + CLIENT_SECRET are set
-  // the live provider is used; otherwise a local mock drives the same flow so
-  // the feature is demoable without partner onboarding.
-  DIGILOCKER_CLIENT_ID: z.string().optional().default(''),
-  DIGILOCKER_CLIENT_SECRET: z.string().optional().default(''),
-  DIGILOCKER_REDIRECT_URI: z.string().optional().default(''),
-  DIGILOCKER_AUTH_URL: z.string().optional().default('https://digilocker.meripehchaan.gov.in/public/oauth2/1/authorize'),
-  DIGILOCKER_TOKEN_URL: z.string().optional().default('https://digilocker.meripehchaan.gov.in/public/oauth2/1/token'),
-  DIGILOCKER_API_BASE: z.string().optional().default('https://digilocker.meripehchaan.gov.in/public/oauth2'),
-
   SEED_ADMIN_EMAIL: z.string().email().optional().default('admin@schemefit.dev'),
   SEED_ADMIN_PASSWORD: z.string().min(8).optional().default('DevAdmin!2026'),
   // When 'true', the server runs the idempotent seed on boot IF the users
@@ -93,7 +83,6 @@ export const env = {
   mongoUrl: raw.NODE_ENV === 'test' ? raw.MONGO_URL_TEST : raw.MONGO_URL,
   sessionTtlMs: raw.SESSION_TTL_HOURS * 60 * 60 * 1000,
   loginRateWindowMs: raw.LOGIN_RATE_WINDOW_MINUTES * 60 * 1000,
-  digilockerLive: Boolean(raw.DIGILOCKER_CLIENT_ID && raw.DIGILOCKER_CLIENT_SECRET && raw.DIGILOCKER_REDIRECT_URI),
 };
 
 if (env.isProd && env.STORAGE_DRIVER === 's3' && !env.S3_BUCKET) {

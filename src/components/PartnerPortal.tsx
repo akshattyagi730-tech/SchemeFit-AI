@@ -291,8 +291,7 @@ export function PartnerPortal({ user }: { user: AuthUser }) {
                           <b>
                             {line.label}
                             {doc ? ` · v${doc.version}` : ''}
-                            {doc?.source === 'digilocker' && <span className="prov-tag good">DigiLocker</span>}
-                            {doc?.source === 'manual' && doc.authenticity && doc.authenticity.method !== 'none' && (
+                            {doc?.authenticity && doc.authenticity.method !== 'none' && (
                               <span
                                 className={`prov-tag ${
                                   doc.authenticity.trustLevel === 'issuer_verified' || doc.authenticity.trustLevel === 'e_signed'

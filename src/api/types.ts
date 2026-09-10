@@ -361,23 +361,6 @@ export interface DocumentAuthenticity {
   summary: string;
 }
 
-export interface DigiLockerStatus {
-  connected: boolean;
-  provider: 'mock' | 'live';
-  name: string | null;
-  maskedAadhaar: string | null;
-  connectedAt: string | null;
-}
-
-export interface DigiLockerIssuedDoc {
-  uri: string;
-  name: string;
-  docTypeCode: string;
-  issuer: string;
-  mime: 'application/pdf';
-  sizeBytes: number;
-  mapsTo: string | null;
-}
 
 export interface DocumentsResponse {
   documents: DocumentInfo[];

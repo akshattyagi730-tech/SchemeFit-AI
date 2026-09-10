@@ -27,14 +27,6 @@
   padding: 3px 8px; border-radius: 6px; white-space: nowrap;
 }
 
-.prototype-banner {
-  display: flex; align-items: flex-start; gap: 10px;
-  background: #fff6e9; border: 1px solid #ffdca8; color: #6b4a1c;
-  padding: 9px 14px; font-size: 12px; line-height: 1.45;
-}
-.prototype-banner > svg { color: #e07d1b; flex: none; margin-top: 2px; }
-.prototype-banner b { color: #59391a; }
-
 .field-error { color: #d0451f; font-size: 11px; margin-top: 4px; display: block; }
 .inline-note { font-size: 12px; color: #5b7196; margin-top: 8px; line-height: 1.5; }
 .inline-note.warn { color: #b5641b; }
@@ -304,8 +296,7 @@ button:disabled, [aria-disabled="true"], .button:disabled { cursor: not-allowed;
 }
 .modal > h2,
 .modal > p { flex: none; }
-.modal .compare-table,
-.modal .dl-issued-list {
+.modal .compare-table {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
@@ -313,36 +304,12 @@ button:disabled, [aria-disabled="true"], .button:disabled { cursor: not-allowed;
 }
 .modal .compare-table .compare-head { position: sticky; top: 0; z-index: 1; }
 
-/* ---- DigiLocker panel + document authenticity ---- */
-.dl-panel { border: 1px solid #cfe6f2; background: linear-gradient(115deg, #eef7fb, #fff); border-radius: 10px; padding: 14px 16px; margin-bottom: 14px; }
-.dl-panel-main { display: flex; align-items: flex-start; gap: 12px; }
-.dl-panel-main > svg { color: #0a7d54; flex: none; margin-top: 2px; }
-.dl-panel-main > div { flex: 1; display: grid; gap: 2px; min-width: 0; }
-.dl-panel-main b { font-size: 14px; color: #0d1c3d; }
-.dl-panel-main span { font-size: 12px; color: #3d5d95; line-height: 1.45; }
-.dl-panel-main small { font-size: 11px; color: #7d92b8; }
-.dl-panel-actions { display: flex; align-items: center; gap: 10px; flex: none; }
-.dl-panel-actions .auth-switch { white-space: nowrap; }
-
+/* ---- Document authenticity badge ---- */
 .auth-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 5px; margin-left: 7px; vertical-align: middle; letter-spacing: 0.2px; }
 .auth-badge.good { background: #e0f9ef; color: #036b4f; }
 .auth-badge.weak { background: #fff3d9; color: #8a5a13; }
 .auth-badge.bad { background: #fdecec; color: #a83232; }
 .auth-badge svg { flex: none; }
-
-.dl-issued-list { display: grid; gap: 8px; margin-top: 8px; }
-.dl-issued-row { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #e6eef3; border-radius: 8px; flex-wrap: wrap; }
-.dl-issued-row > svg { color: #3261a2; flex: none; }
-.dl-issued-info { flex: 1; min-width: 140px; display: grid; gap: 2px; }
-.dl-issued-info b { font-size: 13px; color: #12305a; }
-.dl-issued-info small { font-size: 11px; color: #7d92b8; }
-.dl-issued-row select { border: 1px solid #cfdde8; border-radius: 7px; padding: 8px 10px; font: inherit; background: #fff; color: var(--ink); max-width: 200px; }
-.dl-issued-row .button { padding: 8px 14px; }
-
-@media (max-width: 600px) {
-  .dl-panel-main { flex-wrap: wrap; }
-  .dl-panel-actions { width: 100%; }
-}
 
 /* ---- Official portal link on scheme cards ---- */
 .official-link {

@@ -4,6 +4,8 @@ import { defineModel } from './registry';
 export const DOC_REVIEW_STATUSES = ['uploaded', 'under_review', 'verified', 'changes_requested'] as const;
 export type DocReviewStatus = (typeof DOC_REVIEW_STATUSES)[number];
 
+// New documents are always 'manual'. 'digilocker' is retained only so rows
+// created before the DigiLocker import flow was removed still validate.
 export const DOC_SOURCES = ['manual', 'digilocker'] as const;
 export type DocSource = (typeof DOC_SOURCES)[number];
 
