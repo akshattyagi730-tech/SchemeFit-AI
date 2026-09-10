@@ -46,8 +46,43 @@ export class ApiError extends Error {
 
 let csrfToken: string | null = null;
 
+/** Free hosting (Render) sleeps when idle; the first request can take ~30–50s to
+ *  wake it. Give requests a generous ceiling and a clear error instead of an
+ *  infinite spinner. */
+const REQUEST_TIMEOUT_MS = 45_000;
+
+async function timedFetch(input: string, init: RequestInit): Promise<Response> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
+  const signal = init.signal
+    ? mergeSignals(init.signal, ctrl.signal)
+    : ctrl.signal;
+  try {
+    return await fetch(input, { ...init, signal });
+  } catch (e) {
+    if (ctrl.signal.aborted && !(init.signal?.aborted)) {
+      throw new ApiError(0, 'TIMEOUT', 'The server took too long to respond — it may be waking up. Please try again.');
+    }
+    if (e instanceof DOMException && e.name === 'AbortError') throw e;
+    throw new ApiError(0, 'NETWORK', 'Could not reach the server. Check your connection and try again.');
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function mergeSignals(a: AbortSignal, b: AbortSignal): AbortSignal {
+  if (typeof (AbortSignal as { any?: unknown }).any === 'function') {
+    return (AbortSignal as unknown as { any: (s: AbortSignal[]) => AbortSignal }).any([a, b]);
+  }
+  const ctrl = new AbortController();
+  const onAbort = () => ctrl.abort();
+  a.addEventListener('abort', onAbort);
+  b.addEventListener('abort', onAbort);
+  return ctrl.signal;
+}
+
 async function fetchCsrf(): Promise<string> {
-  const res = await fetch(`${API_BASE}/auth/csrf`, { credentials: 'include' });
+  const res = await timedFetch(`${API_BASE}/auth/csrf`, { credentials: 'include' });
   const body = await res.json().catch(() => ({}));
   csrfToken = body?.data?.csrfToken ?? null;
   return csrfToken ?? '';
@@ -94,7 +129,7 @@ async function doFetch<T>(path: string, opts: RequestOptions, isRetry = false): 
     payload = JSON.stringify(opts.body);
   }
 
-  const res = await fetch(buildUrl(path, opts.query), {
+  const res = await timedFetch(buildUrl(path, opts.query), {
     method,
     credentials: 'include',
     headers,

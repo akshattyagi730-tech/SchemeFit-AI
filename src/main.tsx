@@ -1,4 +1,4 @@
-import { StrictMode, useState } from 'react';
+import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
@@ -21,13 +21,21 @@ const queryClient = new QueryClient({
 function Root() {
   const { data: me, isLoading } = useMe();
   const [workspace, setWorkspace] = useState<Workspace | null>(null);
+  const [slow, setSlow] = useState(false);
   const { t } = useLang();
+
+  useEffect(() => {
+    if (!isLoading) return;
+    const id = setTimeout(() => setSlow(true), 6000);
+    return () => clearTimeout(id);
+  }, [isLoading]);
 
   if (isLoading) {
     return (
       <div className="boot-screen">
         <Loader2 className="spin" size={30} />
         <span>{t('boot.starting')}</span>
+        {slow && <small style={{ maxWidth: 320, textAlign: 'center', color: '#8093b6' }}>{t('boot.waking')}</small>}
       </div>
     );
   }

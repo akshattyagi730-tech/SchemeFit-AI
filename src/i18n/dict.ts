@@ -131,6 +131,7 @@ export const dict = {
   'auth.unexpectedError': { en: 'Unexpected error. Please try again.', hi: 'अप्रत्याशित त्रुटि। कृपया फिर से प्रयास करें।' },
   'auth.wrongWorkspace': { en: 'You selected the partner workspace, but this account is a {role} account. Showing your workspace instead.', hi: 'आपने साझेदार कार्यक्षेत्र चुना था, पर यह खाता {role} खाता है। इसके बजाय आपका कार्यक्षेत्र दिखाया जा रहा है।' },
   'boot.starting': { en: 'Starting SchemeFit…', hi: 'SchemeFit शुरू हो रहा है…' },
+  'boot.waking': { en: 'The demo server sleeps when idle — the first load can take up to a minute. Hang tight.', hi: 'निष्क्रिय होने पर डेमो सर्वर सो जाता है — पहली बार लोड होने में एक मिनट तक लग सकता है। थोड़ा रुकिए।' },
 
   // ---- dashboard ----
   'dash.goodDay': { en: 'Good day, {name}', hi: 'नमस्ते, {name}' },

@@ -67,7 +67,12 @@ export function useLogin() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: { email: string; password: string }) => api.post('/auth/login', body),
-    onSuccess: () => qc.invalidateQueries(),
+    // Confirm the session is live before the caller proceeds, so the app shell
+    // renders immediately (and not after a flash of the login screen).
+    onSuccess: async () => {
+      await qc.refetchQueries({ queryKey: qk.me });
+      qc.invalidateQueries();
+    },
   });
 }
 
@@ -75,7 +80,10 @@ export function useRegister() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: { email: string; password: string; fullName: string }) => api.post('/auth/register', body),
-    onSuccess: () => qc.invalidateQueries(),
+    onSuccess: async () => {
+      await qc.refetchQueries({ queryKey: qk.me });
+      qc.invalidateQueries();
+    },
   });
 }
 
